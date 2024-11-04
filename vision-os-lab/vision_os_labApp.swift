@@ -16,6 +16,7 @@ struct vision_os_labApp: App {
         WindowGroup {
             ContentView()
                 .environment(appModel)
+                .background(.black.opacity(0.5))
         }
 
         ImmersiveSpace(id: appModel.immersiveSpaceID) {
