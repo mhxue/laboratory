@@ -18,7 +18,13 @@ struct vision_os_labApp: App {
                 .environment(appModel)
                 .background(.black.opacity(0.5))
         }
-
+        .windowStyle(.plain)
+        
+        WindowGroup(id: appModel.globeVolumeID) {
+            Globe()
+        }
+        .windowStyle(.volumetric)
+        
         ImmersiveSpace(id: appModel.immersiveSpaceID) {
             ImmersiveView()
                 .environment(appModel)

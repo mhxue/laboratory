@@ -37,6 +37,8 @@ struct ContentView: View {
             
             Text("Hello, world!")
 
+            ToggleGlobeButton()
+            
             ToggleImmersiveSpaceButton()
         }
         .padding()

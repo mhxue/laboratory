@@ -11,6 +11,9 @@ import SwiftUI
 @MainActor
 @Observable
 class AppModel {
+    let globeVolumeID = "globeID"
+    var isGlobeVolumeOpen = false
+    
     let immersiveSpaceID = "ImmersiveSpace"
     enum ImmersiveSpaceState {
         case closed
