@@ -12,7 +12,7 @@ import RealityKitContent
 struct Globe: View {
     var body: some View {
         Model3D(
-            named: "Scene",
+            named: "earth",
             bundle: realityKitContentBundle
         )
     }
