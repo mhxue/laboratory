@@ -7,4 +7,5 @@
 
 enum Module {
     case twoDimensionShapes
+    case threeDimensionShapres
 }

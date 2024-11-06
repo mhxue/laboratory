@@ -44,7 +44,10 @@ struct ContentView: View {
                 
                 NavigationLink(value: Module.twoDimensionShapes) {
                     Text("2D Shapes")
-
+                }
+                
+                NavigationLink(value: Module.threeDimensionShapres) {
+                    Text("3D Shapes")
                 }
             }
             .padding()
@@ -52,6 +55,8 @@ struct ContentView: View {
                 switch module {
                 case .twoDimensionShapes:
                     ShapesView()
+                case .threeDimensionShapres:
+                    ThreeDShapeViews()
                 }
             }
         }
