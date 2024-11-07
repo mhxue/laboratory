@@ -49,6 +49,11 @@ struct ContentView: View {
                 NavigationLink(value: Module.threeDimensionShapres) {
                     Text("3D Shapes")
                 }
+                
+                
+                NavigationLink(value: Module.turnTable) {
+                    Text("Turn Table")
+                }
             }
             .padding()
             .navigationDestination(for: Module.self) { module in
@@ -57,6 +62,8 @@ struct ContentView: View {
                     ShapesView()
                 case .threeDimensionShapres:
                     ThreeDShapeViews()
+                case .turnTable:
+                    TurnTableEntranceView()
                 }
             }
         }

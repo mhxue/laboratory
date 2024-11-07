@@ -14,6 +14,9 @@ class AppModel {
     let globeVolumeID = "globeID"
     var isGlobeVolumeOpen = false
     
+    let turntableID = "turnTableID"
+    var isTurnTableOpen = false
+    
     let immersiveSpaceID = "ImmersiveSpace"
     enum ImmersiveSpaceState {
         case closed

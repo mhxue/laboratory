@@ -36,5 +36,9 @@ struct vision_os_labApp: App {
                 }
         }
         .immersionStyle(selection: .constant(.full), in: .full)
+        
+        ImmersiveSpace(id: appModel.turntableID) {
+            TurnTableView()
+        }
     }
 }
