@@ -54,6 +54,10 @@ struct ContentView: View {
                 NavigationLink(value: Module.turnTable) {
                     Text("Turn Table")
                 }
+                
+                NavigationLink(value: Module.depthEffect) {
+                    Text("Depth Effect")
+                }
             }
             .padding()
             .navigationDestination(for: Module.self) { module in
@@ -64,6 +68,8 @@ struct ContentView: View {
                     ThreeDShapeViews()
                 case .turnTable:
                     TurnTableEntranceView()
+                case .depthEffect:
+                    DepthEffect()
                 }
             }
         }

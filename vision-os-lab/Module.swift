@@ -9,4 +9,5 @@ enum Module {
     case twoDimensionShapes
     case threeDimensionShapres
     case turnTable
+    case depthEffect
 }
