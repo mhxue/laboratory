@@ -1,0 +1,6 @@
+aliyun-python-sdk-core>=2.13.3
+aliyun-python-sdk-nls-cloud-meta>=0.0.1
+oss2>=2.15.0
+volc-sdk-python>=1.0.40
+python-dotenv>=0.19.0
+requests>=2.26.0
