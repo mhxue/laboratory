@@ -12,10 +12,10 @@
 
 ### 2. 网络层基础
 - [IPv6报文头部结构](docs/ipv6_header.md)
-- ICMPv6协议
-- 邻居发现协议（NDP）
-- 路径MTU发现
-- IPv6分片机制
+- [ICMPv6协议](docs/ipv6_icmpv6.md)
+- [邻居发现协议（NDP）](docs/ipv6_ndp.md)
+- [路径MTU发现](docs/ipv6_pmtu.md)
+- [IPv6分片机制](docs/ipv6_fragmentation.md)
 
 ### 3. 地址管理和分配
 - 地址规划和设计
