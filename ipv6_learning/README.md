@@ -11,7 +11,7 @@
   * 特殊地址
 
 ### 2. 网络层基础
-- IPv6报文头部结构
+- [IPv6报文头部结构](docs/ipv6_header.md)
 - ICMPv6协议
 - 邻居发现协议（NDP）
 - 路径MTU发现
