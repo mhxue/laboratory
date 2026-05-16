@@ -2,7 +2,7 @@ import SwiftUI
 
 struct BookCard: View {
     let book: Book
-    let store: BookStore
+    let store: any BookStoring
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {

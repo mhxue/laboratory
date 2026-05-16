@@ -1,16 +1,20 @@
 import SwiftUI
+import EPUBKit
 
-struct SettingsView: View {
-    @Environment(ReaderSettings.self) private var settings
+struct SettingsView<VM: SettingsViewModeling>: View {
+    @State var viewModel: VM
     @Environment(\.dismiss) private var dismiss
 
+    init(viewModel: VM) {
+        self._viewModel = State(initialValue: viewModel)
+    }
+
     var body: some View {
-        @Bindable var s = settings
         NavigationStack {
             Form {
                 Section("Font") {
-                    Picker("Typeface", selection: $s.font) {
-                        ForEach(ReaderFont.allCases, id: \.self) { f in
+                    Picker("Typeface", selection: $viewModel.stylesheet.font) {
+                        ForEach(EPUBFont.allCases, id: \.self) { f in
                             Text(f.displayName).tag(f)
                         }
                     }
@@ -20,15 +24,15 @@ struct SettingsView: View {
                         HStack {
                             Text("Size")
                             Spacer()
-                            Text("\(Int(settings.fontSize))pt").foregroundStyle(.secondary)
+                            Text("\(Int(viewModel.stylesheet.fontSize))pt").foregroundStyle(.secondary)
                         }
-                        Slider(value: $s.fontSize, in: 12...26, step: 1)
+                        Slider(value: $viewModel.stylesheet.fontSize, in: 12...26, step: 1)
                     }
                 }
 
                 Section("Appearance") {
-                    Picker("Theme", selection: $s.theme) {
-                        ForEach(ReaderTheme.allCases, id: \.self) { t in
+                    Picker("Theme", selection: $viewModel.stylesheet.theme) {
+                        ForEach(EPUBTheme.allCases, id: \.self) { t in
                             Text(t.rawValue.capitalized).tag(t)
                         }
                     }
@@ -40,9 +44,10 @@ struct SettingsView: View {
                         HStack {
                             Text("Line Height")
                             Spacer()
-                            Text(String(format: "%.1f×", settings.lineSpacing)).foregroundStyle(.secondary)
+                            Text(String(format: "%.1f×", viewModel.stylesheet.lineSpacing))
+                                .foregroundStyle(.secondary)
                         }
-                        Slider(value: $s.lineSpacing, in: 1.2...2.2, step: 0.1)
+                        Slider(value: $viewModel.stylesheet.lineSpacing, in: 1.2...2.2, step: 0.1)
                     }
                 }
             }

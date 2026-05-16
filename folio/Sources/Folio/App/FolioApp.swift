@@ -3,7 +3,7 @@ import SwiftData
 
 @main
 struct FolioApp: App {
-    @State private var settings = ReaderSettings()
+    @State private var settingsVM = SettingsViewModel()
     let container: ModelContainer
 
     init() {
@@ -16,8 +16,10 @@ struct FolioApp: App {
 
     var body: some Scene {
         WindowGroup {
-            LibraryView()
-                .environment(settings)
+            let store = BookStore()
+            let libraryVM = LibraryViewModel(store: store, context: container.mainContext)
+            LibraryView(viewModel: libraryVM, store: store)
+                .environment(settingsVM)
                 .onAppear {
                     seedLibraryIfNeeded(context: container.mainContext)
                 }

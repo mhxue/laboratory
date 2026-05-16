@@ -1,65 +1,78 @@
 import SwiftUI
 import SwiftData
+import EPUBKit
 
-struct ReaderView: View {
+struct ReaderView<VM: ReaderViewModeling>: View {
+    @State var viewModel: VM
     let book: Book
-    let store: BookStore
+    let store: any BookStoring
 
-    @Environment(ReaderSettings.self) private var settings
+    @Environment(SettingsViewModel.self) private var settingsVM
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
 
-    @State private var chapterURLs: [URL] = []
-    @State private var currentChapter: Int = 0
-    @State private var scrollFraction: Double = 0
-    @State private var showChrome = true
     @State private var showTOC = false
     @State private var showSettingsSheet = false
 
-    private let saveDebounce = DispatchWorkItem(flags: .barrier) {}
+    init(viewModel: VM, book: Book, store: any BookStoring) {
+        self._viewModel = State(initialValue: viewModel)
+        self.book = book
+        self.store = store
+    }
+
+    private var appTheme: AppTheme {
+        AppTheme.from(settingsVM.stylesheet.theme, colorScheme)
+    }
 
     var body: some View {
         ZStack {
-            themeBackground.ignoresSafeArea()
+            appTheme.background.ignoresSafeArea()
 
-            if chapterURLs.isEmpty {
+            if viewModel.isLoading || viewModel.chapterURLs.isEmpty {
                 ProgressView("Opening book…")
             } else {
                 readerContent
             }
         }
         .navigationBarHidden(true)
-        .statusBarHidden(!showChrome)
-        .onAppear(perform: loadBook)
-        .onDisappear(perform: saveProgress)
+        .statusBarHidden(!viewModel.showChrome)
+        .task { await viewModel.load() }
+        .onDisappear { viewModel.saveProgress() }
         .sheet(isPresented: $showTOC) { tocSheet }
-        .sheet(isPresented: $showSettingsSheet) { SettingsView() }
+        .sheet(isPresented: $showSettingsSheet) {
+            SettingsView(viewModel: settingsVM)
+        }
     }
 
     // MARK: - Reader content
 
     private var readerContent: some View {
         ZStack(alignment: .top) {
-            TabView(selection: $currentChapter) {
-                ForEach(Array(chapterURLs.enumerated()), id: \.offset) { index, url in
-                    ChapterWebView(chapterURL: url, settings: settings) { fraction in
-                        scrollFraction = fraction
-                        debounceSave()
+            TabView(selection: $viewModel.currentChapterIndex) {
+                ForEach(Array(viewModel.chapterURLs.enumerated()), id: \.offset) { index, url in
+                    ChapterWebView(
+                        chapterURL: url,
+                        stylesheet: settingsVM.stylesheet
+                    ) { fraction in
+                        viewModel.scrollFraction = fraction
                     }
                     .tag(index)
                     .ignoresSafeArea()
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
-            .onTapGesture { withAnimation(.easeInOut(duration: 0.2)) { showChrome.toggle() } }
+            .onTapGesture {
+                withAnimation(.easeInOut(duration: 0.2)) { viewModel.showChrome.toggle() }
+            }
 
-            if showChrome {
+            if viewModel.showChrome {
                 topChrome
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
         .overlay(alignment: .bottom) {
-            if showChrome {
+            if viewModel.showChrome {
                 bottomChrome
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
@@ -79,7 +92,7 @@ struct ReaderView: View {
                 .font(.caption.bold())
                 .lineLimit(1)
             Spacer()
-            Text("Ch \(currentChapter + 1) of \(chapterURLs.count)")
+            Text("Ch \(viewModel.currentChapterIndex + 1) of \(viewModel.chapterURLs.count)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -104,9 +117,7 @@ struct ReaderView: View {
                     Image(systemName: "list.bullet")
                 }
                 Button {
-                    let bm = Bookmark(chapterIndex: currentChapter, scrollFraction: scrollFraction)
-                    book.bookmarks.append(bm)
-                    try? context.save()
+                    viewModel.addBookmark(note: "")
                 } label: {
                     Image(systemName: "bookmark")
                 }
@@ -124,15 +135,15 @@ struct ReaderView: View {
     private var tocSheet: some View {
         NavigationStack {
             List {
-                ForEach(Array(chapterURLs.enumerated()), id: \.offset) { index, _ in
+                ForEach(Array(viewModel.chapterURLs.enumerated()), id: \.offset) { index, _ in
                     Button {
-                        currentChapter = index
+                        viewModel.currentChapterIndex = index
                         showTOC = false
                     } label: {
                         HStack {
                             Text("Chapter \(index + 1)")
                             Spacer()
-                            if index == currentChapter {
+                            if index == viewModel.currentChapterIndex {
                                 Image(systemName: "checkmark").foregroundStyle(Color.accentColor)
                             }
                         }
@@ -148,57 +159,5 @@ struct ReaderView: View {
             }
         }
         .presentationDetents([.medium, .large])
-    }
-
-    private var themeBackground: Color {
-        switch settings.theme {
-        case .light: return .white
-        case .sepia: return Color(red: 0.96, green: 0.94, blue: 0.87)
-        case .dark: return Color(red: 0.11, green: 0.11, blue: 0.12)
-        }
-    }
-
-    // MARK: - Helpers
-
-    private func loadBook() {
-        chapterURLs = (try? store.chapterURLs(for: book)) ?? []
-        if let p = book.progress {
-            currentChapter = p.chapterIndex
-        }
-    }
-
-    private func saveProgress() {
-        if book.progress == nil {
-            let p = ReadingProgress(chapterIndex: currentChapter, scrollFraction: scrollFraction)
-            book.progress = p
-        } else {
-            book.progress?.chapterIndex = currentChapter
-            book.progress?.scrollFraction = scrollFraction
-            book.progress?.lastRead = Date()
-        }
-        try? context.save()
-    }
-
-    private func debounceSave() {
-        NSObject.cancelPreviousPerformRequests(withTarget: ProgressSaver.shared)
-        ProgressSaver.shared.schedule(after: 5) { [self] in
-            Task { @MainActor in saveProgress() }
-        }
-    }
-}
-
-// Simple debounce helper — avoids Timer retention in SwiftUI views
-private final class ProgressSaver: @unchecked Sendable {
-    static let shared = ProgressSaver()
-    private var task: Task<Void, Never>?
-
-    func schedule(after seconds: TimeInterval, action: @escaping @Sendable () -> Void) {
-        task?.cancel()
-        task = Task {
-            try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
-            if !Task.isCancelled {
-                await MainActor.run { action() }
-            }
-        }
     }
 }

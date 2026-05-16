@@ -1,26 +1,41 @@
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
 
-struct LibraryView: View {
-    @Query(sort: \Book.addedDate, order: .reverse) private var books: [Book]
+// Teach SwiftUI about our epub UTType
+extension UTType {
+    static let epub = UTType(importedAs: "org.idpf.epub-container")
+}
+
+struct LibraryView<VM: LibraryViewModeling>: View {
+    @State var viewModel: VM
+
+    /// Books queried directly from SwiftData so the list stays live
+    /// even when the VM refreshes from an external context change.
+    @Query(sort: \Book.addedDate, order: .reverse) private var queriedBooks: [Book]
     @Environment(\.modelContext) private var context
+
     @State private var showingImporter = false
     @State private var showingSettings = false
-    @State private var importError: String?
     @State private var selectedBook: Book?
 
-    private let store = BookStore()
+    private let store: any BookStoring
     private let columns = [GridItem(.flexible()), GridItem(.flexible())]
+
+    init(viewModel: VM, store: any BookStoring) {
+        self._viewModel = State(initialValue: viewModel)
+        self.store = store
+    }
 
     var body: some View {
         NavigationStack {
             Group {
-                if books.isEmpty {
+                if queriedBooks.isEmpty {
                     emptyState
                 } else {
                     ScrollView {
                         LazyVGrid(columns: columns, spacing: 20) {
-                            ForEach(books) { book in
+                            ForEach(queriedBooks) { book in
                                 BookCard(book: book, store: store)
                                     .onTapGesture { selectedBook = book }
                                     .contextMenu { deleteMenu(book) }
@@ -47,18 +62,31 @@ struct LibraryView: View {
                 handleImport(result)
             }
             .sheet(isPresented: $showingSettings) {
-                SettingsView()
+                SettingsView(viewModel: SettingsViewModel())
             }
             .navigationDestination(item: $selectedBook) { book in
-                ReaderView(book: book, store: store)
+                ReaderView(
+                    viewModel: ReaderViewModel(book: book, store: store, context: context),
+                    book: book,
+                    store: store
+                )
             }
-            .alert("Import Failed", isPresented: .constant(importError != nil)) {
-                Button("OK") { importError = nil }
+            .alert("Import Failed", isPresented: .constant(viewModel.importError != nil)) {
+                Button("OK") { viewModel.importError = nil }
             } message: {
-                Text(importError ?? "")
+                Text(viewModel.importError ?? "")
+            }
+            .overlay {
+                if viewModel.isImporting {
+                    ProgressView("Importing…")
+                        .padding()
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                }
             }
         }
     }
+
+    // MARK: - Private views
 
     private var emptyState: some View {
         VStack(spacing: 16) {
@@ -78,7 +106,7 @@ struct LibraryView: View {
     @ViewBuilder
     private func deleteMenu(_ book: Book) -> some View {
         Button(role: .destructive) {
-            try? store.deleteBook(book, context: context)
+            Task { await viewModel.deleteBook(book) }
         } label: {
             Label("Delete", systemImage: "trash")
         }
@@ -89,19 +117,9 @@ struct LibraryView: View {
         case .success(let url):
             let accessing = url.startAccessingSecurityScopedResource()
             defer { if accessing { url.stopAccessingSecurityScopedResource() } }
-            do {
-                _ = try store.importBook(from: url, context: context)
-            } catch {
-                importError = error.localizedDescription
-            }
+            Task { await viewModel.importBook(from: url) }
         case .failure(let error):
-            importError = error.localizedDescription
+            viewModel.importError = error.localizedDescription
         }
     }
-}
-
-// Teach SwiftUI about our epub UTType
-import UniformTypeIdentifiers
-extension UTType {
-    static let epub = UTType(importedAs: "org.idpf.epub-container")
 }

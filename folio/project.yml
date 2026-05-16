@@ -7,21 +7,24 @@ options:
   createIntermediateGroups: true
 
 packages:
-  ZipFoundation:
-    url: https://github.com/weichsel/ZIPFoundation.git
-    from: 0.9.19
+  EPUBKit:
+    path: Packages/EPUBKit
 
 targets:
   Folio:
     type: application
     platform: iOS
     sources:
-      - path: Sources/Folio
+      - path: Sources/Folio/App
+      - path: Sources/Folio/Features
+      - path: Sources/Folio/Services
+      - path: Sources/Folio/Models
+      - path: Sources/Folio/Theme
     resources:
       - Sources/Folio/Resources
     dependencies:
-      - package: ZipFoundation
-        product: ZIPFoundation
+      - package: EPUBKit
+        product: EPUBKit
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mhxue.folio
@@ -32,3 +35,17 @@ targets:
         TARGETED_DEVICE_FAMILY: 1
         ENABLE_PREVIEWS: YES
         SWIFT_STRICT_CONCURRENCY: complete
+
+  FolioTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/FolioTests
+    dependencies:
+      - target: Folio
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mhxue.folioTests
+        SWIFT_VERSION: 6.0
+        SWIFT_STRICT_CONCURRENCY: complete
+        GENERATE_INFOPLIST_FILE: YES

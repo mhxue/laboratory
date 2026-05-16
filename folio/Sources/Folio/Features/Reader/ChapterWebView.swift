@@ -1,16 +1,18 @@
 import SwiftUI
 import WebKit
+import EPUBKit
 
 struct ChapterWebView: UIViewRepresentable {
     let chapterURL: URL
-    let settings: ReaderSettings
+    let stylesheet: EPUBStylesheet
     var onScrollFractionChange: ((Double) -> Void)?
 
-    func makeCoordinator() -> Coordinator { Coordinator(onScrollFractionChange: onScrollFractionChange) }
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onScrollFractionChange: onScrollFractionChange)
+    }
 
     func makeUIView(context: Context) -> WKWebView {
-        let config = WKWebViewConfiguration()
-        let webView = WKWebView(frame: .zero, configuration: config)
+        let webView = WKWebView(frame: .zero)
         webView.scrollView.delegate = context.coordinator
         webView.backgroundColor = .clear
         webView.scrollView.backgroundColor = .clear
@@ -25,14 +27,17 @@ struct ChapterWebView: UIViewRepresentable {
     }
 
     private func loadContent(_ webView: WKWebView) {
-        webView.loadFileURL(chapterURL, allowingReadAccessTo: chapterURL.deletingLastPathComponent().deletingLastPathComponent())
+        webView.loadFileURL(
+            chapterURL,
+            allowingReadAccessTo: chapterURL.deletingLastPathComponent().deletingLastPathComponent()
+        )
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             injectCSS(webView)
         }
     }
 
     private func injectCSS(_ webView: WKWebView) {
-        let escapedCSS = settings.css
+        let escapedCSS = stylesheet.css
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "`", with: "\\`")
         let js = """
@@ -66,7 +71,7 @@ struct ChapterWebView: UIViewRepresentable {
     }
 }
 
-extension Double {
+private extension Double {
     func clamped(to range: ClosedRange<Double>) -> Double {
         min(max(self, range.lowerBound), range.upperBound)
     }

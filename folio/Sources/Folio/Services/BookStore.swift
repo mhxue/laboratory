@@ -1,11 +1,23 @@
 import Foundation
 import SwiftData
 import UIKit
+import EPUBKit
 
+/// Concrete `@MainActor` implementation of `BookStoring`.
+///
+/// Copies EPUB files into `Documents/Books/`, extracts them to
+/// `Caches/Extracted/<id>/`, and persists `Book` records via SwiftData.
+/// Cover images are saved as PNGs under `Documents/Covers/`.
 @MainActor
-final class BookStore {
+final class BookStore: BookStoring {
 
-    private let parser = EPUBParser()
+    private let parser: any EPUBParsing
+
+    init(parser: any EPUBParsing = EPUBParser()) {
+        self.parser = parser
+    }
+
+    // MARK: - BookStoring
 
     func importBook(from sourceURL: URL, context: ModelContext) throws -> Book {
         let id = UUID()
@@ -13,10 +25,11 @@ final class BookStore {
         let destURL = booksDir.appendingPathComponent("\(id.uuidString).epub")
         try FileManager.default.copyItem(at: sourceURL, to: destURL)
 
-        let metadata = try parser.parse(epubURL: destURL, bookID: id)
+        let extractDir = extractionDirectory(for: id)
+        let document = try parser.parse(epubAt: destURL, extractingTo: extractDir)
 
-        var coverPath: String? = nil
-        if let coverData = metadata.coverImageData {
+        var coverPath: String?
+        if let coverData = document.metadata.coverImageData {
             let coverURL = coversDirectory().appendingPathComponent("\(id.uuidString).png")
             let image = UIImage(data: coverData)
             if let pngData = image?.pngData() {
@@ -27,11 +40,11 @@ final class BookStore {
 
         let book = Book(
             id: id,
-            title: metadata.title,
-            author: metadata.author,
+            title: document.metadata.title,
+            author: document.metadata.author,
             filePath: "Books/\(id.uuidString).epub",
             coverPath: coverPath,
-            chapterCount: metadata.chapterURLs.count
+            chapterCount: document.chapters.count
         )
         context.insert(book)
         try context.save()
@@ -41,16 +54,17 @@ final class BookStore {
     func deleteBook(_ book: Book, context: ModelContext) throws {
         removeFile(relativePath: book.filePath)
         if let cp = book.coverPath { removeFile(relativePath: cp) }
-
-        let extractDir = parser.extractionDirectory(for: book.id)
+        let extractDir = extractionDirectory(for: book.id)
         try? FileManager.default.removeItem(at: extractDir)
-
         context.delete(book)
         try context.save()
     }
 
     func chapterURLs(for book: Book) throws -> [URL] {
-        try parser.chapterURLs(for: book.id)
+        let destURL = documentsDirectory().appendingPathComponent(book.filePath)
+        let extractDir = extractionDirectory(for: book.id)
+        let document = try parser.parse(epubAt: destURL, extractingTo: extractDir)
+        return document.chapters.map(\.url)
     }
 
     func coverImage(for book: Book) -> UIImage? {
@@ -61,6 +75,11 @@ final class BookStore {
     }
 
     // MARK: - Directories
+
+    func extractionDirectory(for bookID: UUID) -> URL {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Extracted/\(bookID.uuidString)", isDirectory: true)
+    }
 
     private func documentsDirectory() -> URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
