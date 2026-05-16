@@ -15,24 +15,24 @@ struct AppTheme {
         switch epubTheme {
         case .light:
             return AppTheme(
-                background: .white,
-                text: Color(red: 0.11, green: 0.11, blue: 0.12),
+                background: Color(hex: "#FFFFFF"),
+                text: Color(hex: "#1A1A1A"),
                 secondaryText: .secondary,
                 chrome: Color(.systemBackground)
             )
         case .sepia:
             return AppTheme(
-                background: Color(red: 0.96, green: 0.94, blue: 0.87),
-                text: Color(red: 0.23, green: 0.18, blue: 0.12),
-                secondaryText: Color(red: 0.45, green: 0.35, blue: 0.25),
-                chrome: Color(red: 0.94, green: 0.91, blue: 0.84)
+                background: Color(hex: "#F5EDD6"),
+                text: Color(hex: "#3B2E1E"),
+                secondaryText: Color(hex: "#6B5340"),
+                chrome: Color(hex: "#EDE5C9")
             )
         case .dark:
             return AppTheme(
-                background: Color(red: 0.11, green: 0.11, blue: 0.12),
-                text: Color(red: 0.90, green: 0.90, blue: 0.92),
-                secondaryText: Color(red: 0.60, green: 0.60, blue: 0.65),
-                chrome: Color(red: 0.16, green: 0.16, blue: 0.18)
+                background: Color(hex: "#161618"),
+                text: Color(hex: "#E8E8ED"),
+                secondaryText: Color(hex: "#98989F"),
+                chrome: Color(hex: "#1C1C1E")
             )
         }
     }
@@ -53,5 +53,33 @@ extension EnvironmentValues {
     var appTheme: AppTheme {
         get { self[AppThemeKey.self] }
         set { self[AppThemeKey.self] = newValue }
+    }
+}
+
+// MARK: - Color(hex:) extension
+
+extension Color {
+    /// Initialise a `Color` from a `"#RRGGBB"` or `"#RRGGBBAA"` hex string.
+    /// Returns `.clear` for malformed input.
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let r, g, b, a: UInt64
+        switch hex.count {
+        case 6:
+            (r, g, b, a) = ((int >> 16) & 0xFF, (int >> 8) & 0xFF, int & 0xFF, 255)
+        case 8:
+            (r, g, b, a) = ((int >> 24) & 0xFF, (int >> 16) & 0xFF, (int >> 8) & 0xFF, int & 0xFF)
+        default:
+            (r, g, b, a) = (0, 0, 0, 0)
+        }
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255,
+            opacity: Double(a) / 255
+        )
     }
 }

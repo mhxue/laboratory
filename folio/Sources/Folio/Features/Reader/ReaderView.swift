@@ -21,13 +21,15 @@ struct ReaderView<VM: ReaderViewModeling>: View {
         self.store = store
     }
 
-    private var appTheme: AppTheme {
-        AppTheme.from(settingsVM.stylesheet.theme, colorScheme)
+    private var stylesheet: EPUBStylesheet { settingsVM.stylesheet }
+
+    private var themeBackground: Color {
+        Color(hex: stylesheet.theme.backgroundColor)
     }
 
     var body: some View {
         ZStack {
-            appTheme.background.ignoresSafeArea()
+            themeBackground.ignoresSafeArea()
 
             if viewModel.isLoading || viewModel.chapterURLs.isEmpty {
                 ProgressView("Opening book…")
@@ -48,34 +50,111 @@ struct ReaderView<VM: ReaderViewModeling>: View {
     // MARK: - Reader content
 
     private var readerContent: some View {
-        ZStack(alignment: .top) {
-            TabView(selection: $viewModel.currentChapterIndex) {
-                ForEach(Array(viewModel.chapterURLs.enumerated()), id: \.offset) { index, url in
-                    ChapterWebView(
-                        chapterURL: url,
-                        stylesheet: settingsVM.stylesheet
-                    ) { fraction in
-                        viewModel.scrollFraction = fraction
-                    }
-                    .tag(index)
-                    .ignoresSafeArea()
+        ZStack {
+            // Full-screen paged chapter view
+            paginatedChapterView
+                .ignoresSafeArea()
+
+            // Invisible tap zones
+            tapZoneOverlay
+
+            // Chrome bars (auto-hiding)
+            VStack {
+                if viewModel.showChrome {
+                    topChrome
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+                Spacer()
+                if viewModel.showChrome {
+                    bottomChrome
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .onTapGesture {
-                withAnimation(.easeInOut(duration: 0.2)) { viewModel.showChrome.toggle() }
-            }
+        }
+    }
 
-            if viewModel.showChrome {
-                topChrome
-                    .transition(.move(edge: .top).combined(with: .opacity))
+    // MARK: - Paginated chapter view
+
+    private var paginatedChapterView: some View {
+        Group {
+            if viewModel.currentChapterIndex < viewModel.chapterURLs.count {
+                let url = viewModel.chapterURLs[viewModel.currentChapterIndex]
+                ChapterWebView(
+                    url: url,
+                    stylesheet: stylesheet,
+                    initialPage: viewModel.currentPage,
+                    onReady: { pageCount in
+                        viewModel.totalPages = pageCount
+                    },
+                    onPageChanged: { page in
+                        viewModel.currentPage = page
+                    },
+                    onOverscrollForward: {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            viewModel.advanceChapter()
+                        }
+                    },
+                    onOverscrollBackward: {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            viewModel.retreatChapter()
+                        }
+                    }
+                )
+                .id(viewModel.currentChapterIndex)
             }
         }
-        .overlay(alignment: .bottom) {
-            if viewModel.showChrome {
-                bottomChrome
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    // MARK: - Tap zones
+
+    private var tapZoneOverlay: some View {
+        GeometryReader { geo in
+            HStack(spacing: 0) {
+                // Left 25% — previous page / chapter
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(width: geo.size.width * 0.25)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        goBackward()
+                    }
+
+                // Center 50% — toggle chrome
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(width: geo.size.width * 0.50)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            viewModel.showChrome.toggle()
+                        }
+                    }
+
+                // Right 25% — next page / chapter
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(width: geo.size.width * 0.25)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        goForward()
+                    }
             }
+        }
+    }
+
+    private func goForward() {
+        if viewModel.currentPage < viewModel.totalPages - 1 {
+            viewModel.currentPage += 1
+        } else {
+            viewModel.advanceChapter()
+        }
+    }
+
+    private func goBackward() {
+        if viewModel.currentPage > 0 {
+            viewModel.currentPage -= 1
+        } else {
+            viewModel.retreatChapter()
         }
     }
 
@@ -88,26 +167,49 @@ struct ReaderView<VM: ReaderViewModeling>: View {
                     .font(.title3.weight(.semibold))
             }
             Spacer()
-            Text(book.title)
+            Text(chapterTitle)
                 .font(.caption.bold())
                 .lineLimit(1)
+                .truncationMode(.tail)
             Spacer()
-            Text("Ch \(viewModel.currentChapterIndex + 1) of \(viewModel.chapterURLs.count)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Menu {
+                Button { showTOC = true } label: {
+                    Label("Contents", systemImage: "list.bullet")
+                }
+                Button { viewModel.addBookmark(note: "") } label: {
+                    Label("Add Bookmark", systemImage: "bookmark")
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.title3.weight(.semibold))
+            }
         }
         .padding(.horizontal)
         .padding(.top, 8)
         .padding(.bottom, 12)
-        .background(.ultraThinMaterial)
+        .background(
+            themeBackground
+                .opacity(0.4)
+                .background(.ultraThinMaterial)
+        )
     }
 
     private var bottomChrome: some View {
         VStack(spacing: 8) {
-            ProgressView(value: book.progressFraction)
+            // Page label + progress bar
+            HStack {
+                Text("Page \(viewModel.currentPage + 1) of \(viewModel.totalPages)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            .padding(.horizontal)
+
+            ProgressView(value: Double(viewModel.currentPage + 1), total: Double(max(viewModel.totalPages, 1)))
                 .tint(.accentColor)
                 .padding(.horizontal)
 
+            // Icon row
             HStack(spacing: 32) {
                 Button { showSettingsSheet = true } label: {
                     Image(systemName: "textformat.size")
@@ -127,7 +229,21 @@ struct ReaderView<VM: ReaderViewModeling>: View {
             .padding(.bottom, 8)
         }
         .padding(.top, 12)
-        .background(.ultraThinMaterial)
+        .background(
+            themeBackground
+                .opacity(0.4)
+                .background(.ultraThinMaterial)
+        )
+    }
+
+    // MARK: - Helpers
+
+    private var chapterTitle: String {
+        let idx = viewModel.currentChapterIndex
+        if viewModel.chapterURLs.count > 1 {
+            return "Chapter \(idx + 1) of \(viewModel.chapterURLs.count)"
+        }
+        return book.title
     }
 
     // MARK: - TOC sheet
@@ -138,6 +254,7 @@ struct ReaderView<VM: ReaderViewModeling>: View {
                 ForEach(Array(viewModel.chapterURLs.enumerated()), id: \.offset) { index, _ in
                     Button {
                         viewModel.currentChapterIndex = index
+                        viewModel.currentPage = 0
                         showTOC = false
                     } label: {
                         HStack {

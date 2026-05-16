@@ -8,10 +8,14 @@ import Foundation
 protocol ReaderViewModeling: AnyObject, Observable {
     var chapterURLs: [URL] { get }
     var currentChapterIndex: Int { get set }
+    var currentPage: Int { get set }
+    var totalPages: Int { get set }
     var scrollFraction: Double { get set }
     var showChrome: Bool { get set }
     var isLoading: Bool { get }
     func load() async
     func saveProgress()
     func addBookmark(note: String)
+    func advanceChapter()
+    func retreatChapter()
 }

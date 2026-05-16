@@ -11,6 +11,8 @@ final class ReaderViewModel: ReaderViewModeling {
 
     private(set) var chapterURLs: [URL] = []
     var currentChapterIndex: Int = 0
+    var currentPage: Int = 0
+    var totalPages: Int = 1
     var scrollFraction: Double = 0
     var showChrome: Bool = true
     private(set) var isLoading: Bool = false
@@ -61,5 +63,17 @@ final class ReaderViewModel: ReaderViewModeling {
         )
         book.bookmarks.append(bookmark)
         try? context.save()
+    }
+
+    func advanceChapter() {
+        guard currentChapterIndex < chapterURLs.count - 1 else { return }
+        currentChapterIndex += 1
+        currentPage = 0
+    }
+
+    func retreatChapter() {
+        guard currentChapterIndex > 0 else { return }
+        currentChapterIndex -= 1
+        currentPage = 0
     }
 }
