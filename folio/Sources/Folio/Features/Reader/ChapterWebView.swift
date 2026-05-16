@@ -10,6 +10,8 @@ struct ChapterWebView: UIViewRepresentable {
     var onPageChanged: ((Int) -> Void)?
     var onOverscrollForward: (() -> Void)?
     var onOverscrollBackward: (() -> Void)?
+    /// zone: "left" | "center" | "right"  (left/right = 25%, center = 50%)
+    var onTap: ((String) -> Void)?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(
@@ -18,7 +20,8 @@ struct ChapterWebView: UIViewRepresentable {
             onReady: onReady,
             onPageChanged: onPageChanged,
             onOverscrollForward: onOverscrollForward,
-            onOverscrollBackward: onOverscrollBackward
+            onOverscrollBackward: onOverscrollBackward,
+            onTap: onTap
         )
     }
 
@@ -67,6 +70,7 @@ struct ChapterWebView: UIViewRepresentable {
         var onPageChanged: ((Int) -> Void)?
         var onOverscrollForward: (() -> Void)?
         var onOverscrollBackward: (() -> Void)?
+        var onTap: ((String) -> Void)?
 
         weak var webView: WKWebView?
         var totalPages: Int = 1
@@ -78,7 +82,8 @@ struct ChapterWebView: UIViewRepresentable {
             onReady: ((Int) -> Void)?,
             onPageChanged: ((Int) -> Void)?,
             onOverscrollForward: (() -> Void)?,
-            onOverscrollBackward: (() -> Void)?
+            onOverscrollBackward: (() -> Void)?,
+            onTap: ((String) -> Void)?
         ) {
             self.stylesheet = stylesheet
             self.initialPage = initialPage
@@ -86,6 +91,7 @@ struct ChapterWebView: UIViewRepresentable {
             self.onPageChanged = onPageChanged
             self.onOverscrollForward = onOverscrollForward
             self.onOverscrollBackward = onOverscrollBackward
+            self.onTap = onTap
         }
 
         func injectStyleAndPagination(in webView: WKWebView) {
@@ -107,6 +113,18 @@ struct ChapterWebView: UIViewRepresentable {
                     var n = Math.max(1, Math.ceil(document.body.scrollWidth / pageWidth));
                     window.webkit.messageHandlers.folio.postMessage({type:'pageCount', count:n});
                 }, 120);
+
+                // Tap zone detection — runs once, won't block scroll gestures
+                if (!window._folioTapBound) {
+                    window._folioTapBound = true;
+                    document.addEventListener('click', function(e) {
+                        if (window.getSelection && window.getSelection().toString()) return;
+                        var zone = e.clientX / window.innerWidth < 0.25 ? 'left'
+                                 : e.clientX / window.innerWidth > 0.75 ? 'right'
+                                 : 'center';
+                        window.webkit.messageHandlers.folio.postMessage({type:'tap', zone:zone});
+                    });
+                }
             })(`\(escapedCSS)`, \(pageWidth));
             """
             webView.evaluateJavaScript(js, completionHandler: nil)
@@ -152,11 +170,16 @@ extension ChapterWebView.Coordinator: WKScriptMessageHandler {
         MainActor.assumeIsolated {
             guard message.name == "folio",
                   let body = message.body as? [String: Any],
-                  let type = body["type"] as? String,
-                  type == "pageCount",
-                  let count = body["count"] as? Int
+                  let type = body["type"] as? String
             else { return }
-            self.handlePageCount(count)
+            switch type {
+            case "pageCount":
+                if let count = body["count"] as? Int { self.handlePageCount(count) }
+            case "tap":
+                if let zone = body["zone"] as? String { self.onTap?(zone) }
+            default:
+                break
+            }
         }
     }
 }

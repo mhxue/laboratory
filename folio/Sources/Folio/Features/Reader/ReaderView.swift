@@ -51,12 +51,9 @@ struct ReaderView<VM: ReaderViewModeling>: View {
 
     private var readerContent: some View {
         ZStack {
-            // Full-screen paged chapter view
+            // Full-screen paged chapter view — tap zones handled inside via JS
             paginatedChapterView
                 .ignoresSafeArea()
-
-            // Invisible tap zones
-            tapZoneOverlay
 
             // Chrome bars (auto-hiding)
             VStack {
@@ -98,46 +95,18 @@ struct ReaderView<VM: ReaderViewModeling>: View {
                         withAnimation(.easeInOut(duration: 0.25)) {
                             viewModel.retreatChapter()
                         }
+                    },
+                    onTap: { zone in
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            switch zone {
+                            case "left":  goBackward()
+                            case "right": goForward()
+                            default:      viewModel.showChrome.toggle()
+                            }
+                        }
                     }
                 )
                 .id(viewModel.currentChapterIndex)
-            }
-        }
-    }
-
-    // MARK: - Tap zones
-
-    private var tapZoneOverlay: some View {
-        GeometryReader { geo in
-            HStack(spacing: 0) {
-                // Left 25% — previous page / chapter
-                Rectangle()
-                    .fill(Color.clear)
-                    .frame(width: geo.size.width * 0.25)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        goBackward()
-                    }
-
-                // Center 50% — toggle chrome
-                Rectangle()
-                    .fill(Color.clear)
-                    .frame(width: geo.size.width * 0.50)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            viewModel.showChrome.toggle()
-                        }
-                    }
-
-                // Right 25% — next page / chapter
-                Rectangle()
-                    .fill(Color.clear)
-                    .frame(width: geo.size.width * 0.25)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        goForward()
-                    }
             }
         }
     }
