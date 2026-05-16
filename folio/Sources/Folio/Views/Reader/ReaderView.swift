@@ -181,7 +181,9 @@ struct ReaderView: View {
 
     private func debounceSave() {
         NSObject.cancelPreviousPerformRequests(withTarget: ProgressSaver.shared)
-        ProgressSaver.shared.schedule(after: 5) { [self] in saveProgress() }
+        ProgressSaver.shared.schedule(after: 5) { [self] in
+            Task { @MainActor in saveProgress() }
+        }
     }
 }
 

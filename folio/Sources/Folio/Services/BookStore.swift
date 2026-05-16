@@ -50,9 +50,7 @@ final class BookStore {
     }
 
     func chapterURLs(for book: Book) throws -> [URL] {
-        let epubURL = documentsDirectory().appendingPathComponent(book.filePath)
-        // Re-extract if cache was purged
-        return try parser.chapterURLs(for: book.id)
+        try parser.chapterURLs(for: book.id)
     }
 
     func coverImage(for book: Book) -> UIImage? {
