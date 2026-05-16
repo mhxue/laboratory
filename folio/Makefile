@@ -6,7 +6,7 @@ SIM_RUNTIME = com.apple.CoreSimulator.SimRuntime.iOS-26-5
 BUILD_DIR   = build
 BUNDLE_ID   = com.mhxue.folio
 
-.PHONY: all generate build run install open clean reset-sim sim-info help
+.PHONY: all generate build run test test-unit test-package open clean reset-sim sim-info help
 
 all: build
 
@@ -26,6 +26,23 @@ build: generate
 
 ## run         — Build, install, and launch on simulator
 run: _boot_sim build _install_and_launch
+
+## test         — Run all tests: EPUBKit (swift test) + FolioTests (xctestplan)
+test: test-package test-unit
+
+## test-package — Run EPUBKit tests via swift test (no simulator needed)
+test-package:
+	swift test --package-path Packages/EPUBKit
+
+## test-unit    — Run FolioTests on simulator using Folio.xctestplan
+test-unit: generate _boot_sim
+	xcodebuild \
+		-project $(PROJECT) \
+		-scheme $(SCHEME) \
+		-destination 'platform=iOS Simulator,name=$(SIM_NAME)' \
+		-testPlan Folio \
+		-derivedDataPath $(BUILD_DIR) \
+		test 2>&1 | grep -E "Test Case|error:|Test Suite .* (passed|failed)|BUILD (FAILED|SUCCEEDED)"
 
 ## open        — Open project in Xcode
 open:

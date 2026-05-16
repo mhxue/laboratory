@@ -1,0 +1,36 @@
+{
+  "configurations" : [
+    {
+      "id" : "A1B2C3D4-0000-0000-0000-000000000001",
+      "name" : "Unit Tests",
+      "options" : {
+        "codeCoverage" : true
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : true,
+    "codeCoverageTargets" : [
+      {
+        "containerPath" : "container:Folio.xcodeproj",
+        "identifier" : "Folio",
+        "name" : "Folio"
+      }
+    ],
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:Folio.xcodeproj",
+      "identifier" : "FolioTests",
+      "name" : "FolioTests"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:Folio.xcodeproj",
+        "identifier" : "FolioTests",
+        "name" : "FolioTests"
+      }
+    }
+  ],
+  "version" : 1
+}
