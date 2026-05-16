@@ -20,8 +20,10 @@ targets:
       - path: Sources/Folio/Services
       - path: Sources/Folio/Models
       - path: Sources/Folio/Theme
-    resources:
-      - Sources/Folio/Resources
+      - path: Sources/Folio/Resources/Assets.xcassets
+        buildPhase: resources
+      - path: Sources/Folio/Resources/pride_and_prejudice.epub
+        buildPhase: resources
     dependencies:
       - package: EPUBKit
         product: EPUBKit
