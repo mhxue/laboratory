@@ -14,74 +14,100 @@ struct LibraryView<VM: LibraryViewModeling>: View {
     /// even when the VM refreshes from an external context change.
     @Query(sort: \Book.addedDate, order: .reverse) private var queriedBooks: [Book]
     @Environment(\.modelContext) private var context
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     @State private var showingImporter = false
     @State private var showingSettings = false
     @State private var selectedBook: Book?
 
     private let store: any BookStoring
-    private let columns = [GridItem(.flexible()), GridItem(.flexible())]
 
     init(viewModel: VM, store: any BookStoring) {
         self._viewModel = State(initialValue: viewModel)
         self.store = store
     }
 
+    private var gridColumns: [GridItem] {
+        let count = DeviceClass.current(horizontalSizeClass: sizeClass).libraryColumns
+        return Array(repeating: GridItem(.flexible(), spacing: 16), count: count)
+    }
+
     var body: some View {
-        NavigationStack {
-            Group {
-                if queriedBooks.isEmpty {
-                    emptyState
+        if sizeClass == .compact {
+            NavigationStack { libraryContent }
+        } else {
+            NavigationSplitView {
+                NavigationStack { libraryContent }
+                    .navigationSplitViewColumnWidth(min: 280, ideal: 320, max: 400)
+            } detail: {
+                if let book = selectedBook {
+                    ReaderView(
+                        viewModel: ReaderViewModel(book: book, store: store, context: context),
+                        book: book,
+                        store: store
+                    )
                 } else {
-                    ScrollView {
-                        LazyVGrid(columns: columns, spacing: 20) {
-                            ForEach(queriedBooks) { book in
-                                BookCard(book: book, store: store)
-                                    .onTapGesture { selectedBook = book }
-                                    .contextMenu { deleteMenu(book) }
-                            }
+                    ContentUnavailableView("Select a Book", systemImage: "book.closed")
+                }
+            }
+        }
+    }
+
+    // MARK: - Library content (no NavigationStack wrapper)
+
+    private var libraryContent: some View {
+        Group {
+            if queriedBooks.isEmpty {
+                emptyState
+            } else {
+                ScrollView {
+                    LazyVGrid(columns: gridColumns, spacing: 20) {
+                        ForEach(queriedBooks) { book in
+                            BookCard(book: book, store: store)
+                                .onTapGesture { selectedBook = book }
+                                .contextMenu { deleteMenu(book) }
                         }
-                        .padding()
                     }
+                    .padding()
                 }
             }
-            .navigationTitle("Folio")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button { showingImporter = true } label: {
-                        Image(systemName: "plus")
-                    }
-                }
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button { showingSettings = true } label: {
-                        Image(systemName: "gearshape")
-                    }
+        }
+        .navigationTitle("Folio")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button { showingImporter = true } label: {
+                    Image(systemName: "plus")
                 }
             }
-            .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.epub]) { result in
-                handleImport(result)
-            }
-            .sheet(isPresented: $showingSettings) {
-                SettingsView(viewModel: SettingsViewModel())
-            }
-            .navigationDestination(item: $selectedBook) { book in
-                ReaderView(
-                    viewModel: ReaderViewModel(book: book, store: store, context: context),
-                    book: book,
-                    store: store
-                )
-            }
-            .alert("Import Failed", isPresented: .constant(viewModel.importError != nil)) {
-                Button("OK") { viewModel.importError = nil }
-            } message: {
-                Text(viewModel.importError ?? "")
-            }
-            .overlay {
-                if viewModel.isImporting {
-                    ProgressView("Importing…")
-                        .padding()
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button { showingSettings = true } label: {
+                    Image(systemName: "gearshape")
                 }
+            }
+        }
+        .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.epub]) { result in
+            handleImport(result)
+        }
+        .sheet(isPresented: $showingSettings) {
+            SettingsView(viewModel: SettingsViewModel())
+        }
+        .navigationDestination(item: $selectedBook) { book in
+            ReaderView(
+                viewModel: ReaderViewModel(book: book, store: store, context: context),
+                book: book,
+                store: store
+            )
+        }
+        .alert("Import Failed", isPresented: .constant(viewModel.importError != nil)) {
+            Button("OK") { viewModel.importError = nil }
+        } message: {
+            Text(viewModel.importError ?? "")
+        }
+        .overlay {
+            if viewModel.isImporting {
+                ProgressView("Importing…")
+                    .padding()
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
             }
         }
     }

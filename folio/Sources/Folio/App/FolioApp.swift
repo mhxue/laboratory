@@ -24,6 +24,9 @@ struct FolioApp: App {
                     seedLibraryIfNeeded(context: container.mainContext)
                 }
         }
+        #if targetEnvironment(macCatalyst)
+        .defaultSize(width: 1100, height: 760)
+        #endif
         .modelContainer(container)
     }
 }

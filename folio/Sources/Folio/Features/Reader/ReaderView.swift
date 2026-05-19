@@ -11,9 +11,13 @@ struct ReaderView<VM: ReaderViewModeling>: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     @State private var showTOC = false
     @State private var showSettingsSheet = false
+    @State private var engine = NativeReaderEngine()
+    @State private var goToLastPage = false
+    @FocusState private var isFocused: Bool
 
     init(viewModel: VM, book: Book, store: any BookStoring) {
         self._viewModel = State(initialValue: viewModel)
@@ -51,7 +55,7 @@ struct ReaderView<VM: ReaderViewModeling>: View {
 
     private var readerContent: some View {
         ZStack {
-            // Full-screen paged chapter view — tap zones handled inside via JS
+            // Full-screen paged chapter view
             paginatedChapterView
                 .ignoresSafeArea()
 
@@ -68,47 +72,80 @@ struct ReaderView<VM: ReaderViewModeling>: View {
                 }
             }
         }
+        .focusable()
+        .focused($isFocused)
+        .onKeyPress(.leftArrow)  { goBackward(); return .handled }
+        .onKeyPress(.rightArrow) { goForward();  return .handled }
+        .onKeyPress(.space)      { goForward();  return .handled }
+        .onAppear { isFocused = true }
     }
 
-    // MARK: - Paginated chapter view
+    // MARK: - Paginated chapter view (native block renderer)
 
     private var paginatedChapterView: some View {
-        Group {
-            if viewModel.currentChapterIndex < viewModel.chapterURLs.count {
-                let url = viewModel.chapterURLs[viewModel.currentChapterIndex]
-                ChapterWebView(
-                    url: url,
-                    stylesheet: stylesheet,
-                    initialPage: viewModel.currentPage,
-                    onReady: { pageCount in
-                        viewModel.totalPages = pageCount
-                    },
-                    onPageChanged: { page in
-                        viewModel.currentPage = page
-                    },
-                    onOverscrollForward: {
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            viewModel.advanceChapter()
-                        }
-                    },
-                    onOverscrollBackward: {
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            viewModel.retreatChapter()
-                        }
-                    },
-                    onTap: { zone in
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            switch zone {
-                            case "left":  goBackward()
-                            case "right": goForward()
-                            default:      viewModel.showChrome.toggle()
-                            }
-                        }
-                    }
-                )
-                .id(viewModel.currentChapterIndex)
+        GeometryReader { geo in
+            let pageSize = geo.size
+            Group {
+                if engine.isReady && !engine.pages.isEmpty {
+                    nativePagedView(pageSize: pageSize)
+                } else if viewModel.currentChapterIndex < viewModel.chapterURLs.count {
+                    // Show a spinner while engine is loading
+                    Color(hex: stylesheet.theme.backgroundColor)
+                        .overlay(ProgressView())
+                }
+            }
+            .onChange(of: viewModel.currentChapterIndex) { _, _ in
+                loadCurrentChapter(pageSize: pageSize)
+            }
+            .onChange(of: stylesheet) { _, _ in
+                loadCurrentChapter(pageSize: pageSize)
+            }
+            .onChange(of: engine.isReady) { _, ready in
+                guard ready, goToLastPage else { return }
+                goToLastPage = false
+                viewModel.currentPage = max(0, engine.pages.count - 1)
+            }
+            .task(id: "\(viewModel.currentChapterIndex)-\(pageSize.width)-\(pageSize.height)") {
+                loadCurrentChapter(pageSize: pageSize)
             }
         }
+    }
+
+    private func loadCurrentChapter(pageSize: CGSize) {
+        guard viewModel.currentChapterIndex < viewModel.chapterURLs.count else { return }
+        let url = viewModel.chapterURLs[viewModel.currentChapterIndex]
+        let dc = DeviceClass.current(horizontalSizeClass: sizeClass)
+        engine.load(chapterURL: url, stylesheet: stylesheet, pageSize: pageSize, deviceClass: dc)
+        if !goToLastPage {
+            viewModel.currentPage = 0
+        }
+    }
+
+    private func nativePagedView(pageSize: CGSize) -> some View {
+        // Snapshot both arrays so the view captures stable values at render time.
+        // engine.pages/blocks can be reset to [] on the main actor while
+        // SwiftUI is still diffing the previous render — reading live inside the
+        // view builder would cause index-out-of-bounds crashes.
+        let pages  = engine.pages
+        let blocks = engine.blocks
+        let dc     = DeviceClass.current(horizontalSizeClass: sizeClass)
+
+        return BookPageTurnView(
+            pages: pages,
+            blocks: blocks,
+            stylesheet: stylesheet,
+            deviceClass: dc,
+            currentIndex: $viewModel.currentPage,
+            onAdvance:   { goForward() },
+            onRetreat:   { goBackward() },
+            onTapCenter: {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    viewModel.showChrome.toggle()
+                }
+            }
+        )
+        .onAppear { viewModel.totalPages = pages.count }
+        .onChange(of: pages.count) { _, count in viewModel.totalPages = count }
     }
 
     private func goForward() {
@@ -123,6 +160,7 @@ struct ReaderView<VM: ReaderViewModeling>: View {
         if viewModel.currentPage > 0 {
             viewModel.currentPage -= 1
         } else {
+            goToLastPage = true
             viewModel.retreatChapter()
         }
     }
