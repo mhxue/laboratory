@@ -136,6 +136,8 @@ struct ReaderView<VM: ReaderViewModeling>: View {
             stylesheet: stylesheet,
             deviceClass: dc,
             currentIndex: $viewModel.currentPage,
+            canAdvanceChapter: viewModel.currentChapterIndex < viewModel.chapterURLs.count - 1,
+            canRetreatChapter: viewModel.currentChapterIndex > 0,
             onAdvance:   { goForward() },
             onRetreat:   { goBackward() },
             onTapCenter: {

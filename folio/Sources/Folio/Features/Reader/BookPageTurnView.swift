@@ -16,6 +16,9 @@ struct BookPageTurnView: UIViewControllerRepresentable {
 
     @Binding var currentIndex: Int
 
+    var canAdvanceChapter: Bool = false
+    var canRetreatChapter: Bool = false
+
     var onAdvance:   (() -> Void)?
     var onRetreat:   (() -> Void)?
     var onTapCenter: (() -> Void)?
@@ -50,8 +53,7 @@ struct BookPageTurnView: UIViewControllerRepresentable {
         // (e.g. chapter navigation from chrome). Ignore while the user is mid-gesture.
         let coord = context.coordinator
         if currentIndex != coord.displayedIndex {
-            let animated = coord.displayedIndex != currentIndex
-            coord.showPage(at: currentIndex, in: pvc, animated: animated)
+            coord.showPage(at: currentIndex, in: pvc, animated: false)
         }
     }
 
@@ -100,20 +102,43 @@ extension BookPageTurnView.Coordinator: UIPageViewControllerDataSource {
 
     func pageViewController(_ pvc: UIPageViewController,
                             viewControllerBefore vc: UIViewController) -> UIViewController? {
-        guard let current = vc as? PageContentViewController,
-              current.index > 0 else { return nil }
-        let prev = current.index - 1
-        guard let page = parent.pages[safe: prev] else { return nil }
-        return makeVC(page: page, index: prev)
+        if let current = vc as? PageContentViewController {
+            if current.index > 0 {
+                let prev = current.index - 1
+                guard let page = parent.pages[safe: prev] else { return nil }
+                return makeVC(page: page, index: prev)
+            } else if parent.canRetreatChapter {
+                return ChapterBoundaryViewController(direction: .backward,
+                                                    backgroundColor: parent.stylesheet.theme.backgroundColor)
+            }
+            return nil
+        } else if let boundary = vc as? ChapterBoundaryViewController, boundary.direction == .forward {
+            // User is reversing a forward-boundary swipe — give them the last page back.
+            let lastIndex = parent.pages.count - 1
+            guard let page = parent.pages[safe: lastIndex] else { return nil }
+            return makeVC(page: page, index: lastIndex)
+        }
+        return nil
     }
 
     func pageViewController(_ pvc: UIPageViewController,
                             viewControllerAfter vc: UIViewController) -> UIViewController? {
-        guard let current = vc as? PageContentViewController,
-              current.index < parent.pages.count - 1 else { return nil }
-        let next = current.index + 1
-        guard let page = parent.pages[safe: next] else { return nil }
-        return makeVC(page: page, index: next)
+        if let current = vc as? PageContentViewController {
+            if current.index < parent.pages.count - 1 {
+                let next = current.index + 1
+                guard let page = parent.pages[safe: next] else { return nil }
+                return makeVC(page: page, index: next)
+            } else if parent.canAdvanceChapter {
+                return ChapterBoundaryViewController(direction: .forward,
+                                                    backgroundColor: parent.stylesheet.theme.backgroundColor)
+            }
+            return nil
+        } else if let boundary = vc as? ChapterBoundaryViewController, boundary.direction == .backward {
+            // User is reversing a backward-boundary swipe — give them the first page back.
+            guard let page = parent.pages[safe: 0] else { return nil }
+            return makeVC(page: page, index: 0)
+        }
+        return nil
     }
 }
 
@@ -126,16 +151,35 @@ extension BookPageTurnView.Coordinator: UIPageViewControllerDelegate {
                             previousViewControllers: [UIViewController],
                             transitionCompleted completed: Bool) {
         guard completed,
-              let current = pvc.viewControllers?.first as? PageContentViewController
+              let currentVC = pvc.viewControllers?.first
         else { return }
 
-        let newIndex = current.index
-        displayedIndex = newIndex
+        let previousVC = previousViewControllers.first
 
-        if newIndex > (previousViewControllers.first as? PageContentViewController)?.index ?? 0 {
-            parent.onAdvance?()
-        } else {
-            parent.onRetreat?()
+        if let current = currentVC as? PageContentViewController {
+            let newIndex = current.index
+            displayedIndex = newIndex
+
+            // User reversed a chapter-boundary swipe — landed back inside the chapter.
+            if previousVC is ChapterBoundaryViewController { return }
+
+            guard let prevIndex = (previousVC as? PageContentViewController)?.index else { return }
+            if newIndex > prevIndex {
+                parent.onAdvance?()
+            } else if newIndex < prevIndex {
+                parent.onRetreat?()
+            }
+        } else if let boundary = currentVC as? ChapterBoundaryViewController {
+            // Chapter boundary crossed via swipe gesture.
+            // Align displayedIndex with what the ViewModel will reset to (0) so that
+            // updateUIViewController doesn't fire a stale showPage call before the old
+            // BookPageTurnView is torn down.
+            displayedIndex = 0
+            if boundary.direction == .forward {
+                parent.onAdvance?()
+            } else {
+                parent.onRetreat?()
+            }
         }
     }
 }
@@ -195,6 +239,24 @@ struct EPUBBlocksPageView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color(hex: stylesheet.theme.backgroundColor))
     }
+}
+
+// MARK: - ChapterBoundaryViewController
+
+/// Shown as the placeholder page when the user swipes across a chapter boundary.
+/// Displays the theme background so the curl looks natural; the real chapter
+/// loads and replaces `BookPageTurnView` once `didFinishAnimating` fires.
+final class ChapterBoundaryViewController: UIViewController {
+    enum Direction { case forward, backward }
+    let direction: Direction
+
+    init(direction: Direction, backgroundColor: String) {
+        self.direction = direction
+        super.init(nibName: nil, bundle: nil)
+        view.backgroundColor = UIColor(Color(hex: backgroundColor))
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
 }
 
 // MARK: - Helpers
