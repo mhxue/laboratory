@@ -21,7 +21,7 @@ final class NotesViewModel: NotesViewModeling {
 
     func count(for tab: NotesTab) -> Int {
         let entries = collectBookmarkEntries(bookFilter: bookFilter)
-        return entries.lazy.filter { matches(tab: tab, note: $0.note) }.count
+        return entries.lazy.filter { self.matches(tab: tab, note: $0.note) }.count
     }
 
     // MARK: - Dependencies

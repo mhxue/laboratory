@@ -24,6 +24,14 @@ targets:
         buildPhase: resources
       - path: Sources/Folio/Resources/pride_and_prejudice.epub
         buildPhase: resources
+      - path: Sources/Folio/Resources/sanguo_yanyi.epub
+        buildPhase: resources
+      - path: Sources/Folio/Resources/shuihu_zhuan.epub
+        buildPhase: resources
+      - path: Sources/Folio/Resources/xiyou_ji.epub
+        buildPhase: resources
+      - path: Sources/Folio/Resources/honglou_meng.epub
+        buildPhase: resources
     dependencies:
       - package: EPUBKit
         product: EPUBKit
