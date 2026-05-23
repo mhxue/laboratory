@@ -96,4 +96,60 @@ final class EPUBStylesheetTests: XCTestCase {
         let b = EPUBStylesheet(fontSize: 18, lineSpacing: 1.6, theme: .dark,  font: .serif)
         XCTAssertNotEqual(a, b)
     }
+
+    // MARK: Margin
+
+    func test_default_margin_isComfortable() {
+        XCTAssertEqual(EPUBStylesheet.default.margin, .comfortable)
+    }
+
+    func test_margin_tight_isSmallerThanComfortable() {
+        XCTAssertLessThan(EPUBMargin.tight.horizontalPadding, EPUBMargin.comfortable.horizontalPadding)
+    }
+
+    func test_margin_wide_isLargerThanComfortable() {
+        XCTAssertGreaterThan(EPUBMargin.wide.horizontalPadding, EPUBMargin.comfortable.horizontalPadding)
+    }
+
+    func test_css_appliesMarginPadding_forTight() {
+        var sheet = EPUBStylesheet.default
+        sheet.margin = .tight
+        XCTAssertTrue(sheet.css.contains("padding: 56px 16.0px 72px"),
+                      "Tight margin should emit 16px horizontal padding")
+    }
+
+    func test_css_appliesMarginPadding_forComfortable() {
+        var sheet = EPUBStylesheet.default
+        sheet.margin = .comfortable
+        XCTAssertTrue(sheet.css.contains("padding: 56px 28.0px 72px"),
+                      "Comfortable margin should emit 28px horizontal padding")
+    }
+
+    func test_css_appliesMarginPadding_forWide() {
+        var sheet = EPUBStylesheet.default
+        sheet.margin = .wide
+        XCTAssertTrue(sheet.css.contains("padding: 56px 44.0px 72px"),
+                      "Wide margin should emit 44px horizontal padding")
+    }
+
+    func test_equatable_differentMargin_notEqual() {
+        let a = EPUBStylesheet(fontSize: 18, lineSpacing: 1.6, theme: .light, font: .serif, margin: .tight)
+        let b = EPUBStylesheet(fontSize: 18, lineSpacing: 1.6, theme: .light, font: .serif, margin: .wide)
+        XCTAssertNotEqual(a, b)
+    }
+
+    func test_margin_allCases_haveDistinctPadding() {
+        let values = EPUBMargin.allCases.map(\.horizontalPadding)
+        XCTAssertEqual(Set(values).count, EPUBMargin.allCases.count,
+                       "Every margin preset should have a unique padding value")
+    }
+
+    func test_margin_codable_roundtrip() throws {
+        let values: [EPUBMargin] = [.tight, .comfortable, .wide]
+        for original in values {
+            let data = try JSONEncoder().encode(original)
+            let decoded = try JSONDecoder().decode(EPUBMargin.self, from: data)
+            XCTAssertEqual(decoded, original)
+        }
+    }
 }

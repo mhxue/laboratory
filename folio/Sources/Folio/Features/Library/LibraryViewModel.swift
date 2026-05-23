@@ -10,8 +10,40 @@ final class LibraryViewModel: LibraryViewModeling {
     // MARK: - LibraryViewModeling
 
     private(set) var books: [Book] = []
+    var filter: LibraryFilter = .all
     var isImporting: Bool = false
     var importError: String?
+
+    var filteredBooks: [Book] {
+        switch filter {
+        case .all:      return books
+        case .reading:  return books.filter(\.isInProgress)
+        case .finished: return books.filter(\.isFinished)
+        case .unread:   return books.filter(\.isUnread)
+        }
+    }
+
+    /// Highest-priority hero candidate: the most recently read in-progress
+    /// book. We use `progress.lastRead` rather than `addedDate` so the hero
+    /// follows what the user is actually engaging with.
+    var continueReading: Book? {
+        books
+            .filter(\.isInProgress)
+            .max(by: { lhs, rhs in
+                let ld = lhs.progress?.lastRead ?? .distantPast
+                let rd = rhs.progress?.lastRead ?? .distantPast
+                return ld < rd
+            })
+    }
+
+    func count(for filter: LibraryFilter) -> Int {
+        switch filter {
+        case .all:      return books.count
+        case .reading:  return books.lazy.filter(\.isInProgress).count
+        case .finished: return books.lazy.filter(\.isFinished).count
+        case .unread:   return books.lazy.filter(\.isUnread).count
+        }
+    }
 
     // MARK: - Dependencies
 

@@ -51,6 +51,34 @@ public enum EPUBFont: String, CaseIterable, Codable, Sendable {
     }
 }
 
+/// Horizontal margin preset that controls the body's left/right padding.
+///
+/// Maps directly to the CSS `padding-left`/`padding-right` emitted in
+/// `EPUBStylesheet.css`. The numeric values are deliberately conservative
+/// so even on compact iPhones the longest preset still leaves room for ~6
+/// characters of breathing space at the edges.
+public enum EPUBMargin: String, CaseIterable, Codable, Sendable {
+    case tight
+    case comfortable
+    case wide
+
+    public var horizontalPadding: Double {
+        switch self {
+        case .tight:        return 16
+        case .comfortable:  return 28
+        case .wide:         return 44
+        }
+    }
+
+    public var displayName: String {
+        switch self {
+        case .tight:        return "Tight"
+        case .comfortable:  return "Comfortable"
+        case .wide:         return "Wide"
+        }
+    }
+}
+
 /// Value type encapsulating all typography and appearance settings for the reader.
 /// Generates a complete CSS string that is injected into each chapter's web view.
 public struct EPUBStylesheet: Equatable, Sendable {
@@ -58,15 +86,18 @@ public struct EPUBStylesheet: Equatable, Sendable {
     public var lineSpacing: Double    // default 1.6
     public var theme: EPUBTheme       // .light / .sepia / .dark
     public var font: EPUBFont         // .serif / .sansSerif
+    public var margin: EPUBMargin     // .tight / .comfortable / .wide
 
     public init(fontSize: Double = 18,
                 lineSpacing: Double = 1.6,
                 theme: EPUBTheme = .light,
-                font: EPUBFont = .serif) {
+                font: EPUBFont = .serif,
+                margin: EPUBMargin = .comfortable) {
         self.fontSize = fontSize
         self.lineSpacing = lineSpacing
         self.theme = theme
         self.font = font
+        self.margin = margin
     }
 
     public static let `default` = EPUBStylesheet()
@@ -88,7 +119,7 @@ public struct EPUBStylesheet: Equatable, Sendable {
             font-family: \(font.cssValue);
             font-size: \(fontSize)px;
             line-height: \(lineSpacing);
-            padding: 56px 28px 72px;
+            padding: 56px \(margin.horizontalPadding)px 72px;
             overflow-x: scroll;
             overflow-y: hidden;
             column-fill: auto;

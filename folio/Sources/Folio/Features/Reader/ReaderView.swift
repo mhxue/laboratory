@@ -12,9 +12,10 @@ struct ReaderView<VM: ReaderViewModeling>: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.appTheme) private var appTheme
 
     @State private var showTOC = false
-    @State private var showSettingsSheet = false
+    @State private var showTypographySheet = false
     @State private var engine = NativeReaderEngine()
     @State private var goToLastPage = false
     @FocusState private var isFocused: Bool
@@ -31,6 +32,10 @@ struct ReaderView<VM: ReaderViewModeling>: View {
         Color(hex: stylesheet.theme.backgroundColor)
     }
 
+    private var readerPalette: AppTheme {
+        AppTheme.from(stylesheet.theme, colorScheme)
+    }
+
     var body: some View {
         ZStack {
             themeBackground.ignoresSafeArea()
@@ -43,11 +48,17 @@ struct ReaderView<VM: ReaderViewModeling>: View {
         }
         .navigationBarHidden(true)
         .statusBarHidden(!viewModel.showChrome)
-        .task { await viewModel.load() }
-        .onDisappear { viewModel.saveProgress() }
+        .task {
+            await viewModel.load()
+            viewModel.revealChromeAndScheduleHide()
+        }
+        .onDisappear {
+            viewModel.cancelChromeAutoHide()
+            viewModel.saveProgress()
+        }
         .sheet(isPresented: $showTOC) { tocSheet }
-        .sheet(isPresented: $showSettingsSheet) {
-            SettingsView(viewModel: settingsVM)
+        .sheet(isPresented: $showTypographySheet) {
+            SettingsView(viewModel: settingsVM, presentedAsSheet: true)
         }
     }
 
@@ -55,12 +66,13 @@ struct ReaderView<VM: ReaderViewModeling>: View {
 
     private var readerContent: some View {
         ZStack {
-            // Full-screen paged chapter view
             paginatedChapterView
                 .ignoresSafeArea()
+                .opacity(viewModel.showChrome ? 0.55 : 1.0)
+                .animation(.easeOut(duration: 0.18), value: viewModel.showChrome)
 
             // Chrome bars (auto-hiding)
-            VStack {
+            VStack(spacing: 0) {
                 if viewModel.showChrome {
                     topChrome
                         .transition(.move(edge: .top).combined(with: .opacity))
@@ -71,6 +83,7 @@ struct ReaderView<VM: ReaderViewModeling>: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
+            .animation(.easeOut(duration: 0.18), value: viewModel.showChrome)
         }
         .focusable()
         .focused($isFocused)
@@ -89,7 +102,6 @@ struct ReaderView<VM: ReaderViewModeling>: View {
                 if engine.isReady && !engine.pages.isEmpty {
                     nativePagedView(pageSize: pageSize)
                 } else if viewModel.currentChapterIndex < viewModel.chapterURLs.count {
-                    // Show a spinner while engine is loading
                     Color(hex: stylesheet.theme.backgroundColor)
                         .overlay(ProgressView())
                 }
@@ -122,10 +134,6 @@ struct ReaderView<VM: ReaderViewModeling>: View {
     }
 
     private func nativePagedView(pageSize: CGSize) -> some View {
-        // Snapshot both arrays so the view captures stable values at render time.
-        // engine.pages/blocks can be reset to [] on the main actor while
-        // SwiftUI is still diffing the previous render — reading live inside the
-        // view builder would cause index-out-of-bounds crashes.
         let pages  = engine.pages
         let blocks = engine.blocks
         let dc     = DeviceClass.current(horizontalSizeClass: sizeClass)
@@ -140,11 +148,7 @@ struct ReaderView<VM: ReaderViewModeling>: View {
             canRetreatChapter: viewModel.currentChapterIndex > 0,
             onAdvance:   { goForward() },
             onRetreat:   { goBackward() },
-            onTapCenter: {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    viewModel.showChrome.toggle()
-                }
-            }
+            onTapCenter: { viewModel.toggleChrome() }
         )
         .onAppear { viewModel.totalPages = pages.count }
         .onChange(of: pages.count) { _, count in viewModel.totalPages = count }
@@ -170,90 +174,150 @@ struct ReaderView<VM: ReaderViewModeling>: View {
     // MARK: - Chrome bars
 
     private var topChrome: some View {
-        HStack {
-            Button(action: { dismiss() }) {
-                Image(systemName: "chevron.left")
-                    .font(.title3.weight(.semibold))
+        HStack(spacing: 12) {
+            iconButton(systemName: "chevron.left") { dismiss() }
+            VStack(alignment: .leading, spacing: 2) {
+                MonoLabel(text: chapterCounter, color: readerPalette.accent, tracking: 1.4)
+                Text(chapterTitle)
+                    .font(.system(size: 13.5, weight: .semibold))
+                    .kerning(-0.1)
+                    .foregroundStyle(readerPalette.text)
+                    .lineLimit(1)
             }
-            Spacer()
-            Text(chapterTitle)
-                .font(.caption.bold())
-                .lineLimit(1)
-                .truncationMode(.tail)
             Spacer()
             Menu {
-                Button { showTOC = true } label: {
-                    Label("Contents", systemImage: "list.bullet")
-                }
-                Button { viewModel.addBookmark(note: "") } label: {
-                    Label("Add Bookmark", systemImage: "bookmark")
-                }
+                Button { showTOC = true } label: { Label("Contents", systemImage: "list.bullet") }
+                Button { viewModel.addBookmark(note: "", kind: .important) }
+                    label: { Label("Highlight (Important)", systemImage: "bookmark") }
+                Button { viewModel.addBookmark(note: "", kind: .connection) }
+                    label: { Label("Highlight (Connection)", systemImage: "link") }
+                Button { viewModel.addBookmark(note: "", kind: .lookup) }
+                    label: { Label("Highlight (Look up later)", systemImage: "questionmark.circle") }
             } label: {
-                Image(systemName: "ellipsis")
-                    .font(.title3.weight(.semibold))
+                iconLook(systemName: "ellipsis")
             }
         }
-        .padding(.horizontal)
-        .padding(.top, 8)
-        .padding(.bottom, 12)
+        .padding(.horizontal, 18)
+        .padding(.top, 50)
+        .padding(.bottom, 14)
         .background(
-            themeBackground
-                .opacity(0.4)
-                .background(.ultraThinMaterial)
+            LinearGradient(
+                colors: [
+                    themeBackground.opacity(0.95),
+                    themeBackground.opacity(0.7),
+                    themeBackground.opacity(0)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
         )
     }
 
     private var bottomChrome: some View {
-        VStack(spacing: 8) {
-            // Page label + progress bar
-            HStack {
-                Text("Page \(viewModel.currentPage + 1) of \(viewModel.totalPages)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
+        VStack(spacing: 12) {
+            if let label = viewModel.timeLeftLabel {
+                Text(label.uppercased())
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .tracking(1.2)
+                    .foregroundStyle(readerPalette.tertiaryText)
             }
-            .padding(.horizontal)
-
-            ProgressView(value: Double(viewModel.currentPage + 1), total: Double(max(viewModel.totalPages, 1)))
-                .tint(.accentColor)
-                .padding(.horizontal)
-
-            // Icon row
-            HStack(spacing: 32) {
-                Button { showSettingsSheet = true } label: {
-                    Image(systemName: "textformat.size")
-                }
-                Spacer()
-                Button { showTOC = true } label: {
-                    Image(systemName: "list.bullet")
-                }
-                Button {
-                    viewModel.addBookmark(note: "")
-                } label: {
-                    Image(systemName: "bookmark")
-                }
-            }
-            .font(.title3)
-            .padding(.horizontal, 40)
-            .padding(.bottom, 8)
+            scrubber
+            actionRow
         }
-        .padding(.top, 12)
+        .padding(.horizontal, 18)
+        .padding(.top, 14)
+        .padding(.bottom, 22)
         .background(
-            themeBackground
-                .opacity(0.4)
-                .background(.ultraThinMaterial)
+            LinearGradient(
+                colors: [
+                    themeBackground.opacity(0),
+                    themeBackground.opacity(0.7),
+                    themeBackground.opacity(0.95)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
         )
+    }
+
+    private var scrubber: some View {
+        HStack(spacing: 10) {
+            Text("\(Int(viewModel.overallProgress * 100))%")
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundStyle(readerPalette.secondaryText)
+                .frame(minWidth: 40, alignment: .leading)
+
+            Slider(
+                value: Binding(
+                    get: { viewModel.overallProgress },
+                    set: { viewModel.setOverallProgress($0) }
+                ),
+                in: 0...1,
+                onEditingChanged: { editing in
+                    if editing {
+                        viewModel.cancelChromeAutoHide()
+                    } else {
+                        viewModel.revealChromeAndScheduleHide()
+                    }
+                }
+            )
+            .tint(readerPalette.accent)
+
+            Text("\(viewModel.chapterURLs.count)")
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundStyle(readerPalette.secondaryText)
+                .frame(minWidth: 32, alignment: .trailing)
+        }
+    }
+
+    private var actionRow: some View {
+        HStack(spacing: 28) {
+            chromeAction(icon: "list.bullet", label: "TOC") { showTOC = true }
+            chromeAction(icon: "textformat.size", label: "Type") { showTypographySheet = true }
+            chromeAction(icon: "bookmark", label: "Mark") {
+                viewModel.addBookmark(note: "", kind: .important)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func chromeAction(icon: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .medium))
+                MonoLabel(text: label, color: readerPalette.secondaryText, size: 8.5, tracking: 1.0)
+            }
+            .foregroundStyle(readerPalette.text)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func iconButton(systemName: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) { iconLook(systemName: systemName) }
+            .buttonStyle(.plain)
+    }
+
+    private func iconLook(systemName: String) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: 14, weight: .semibold))
+            .frame(width: 32, height: 32)
+            .background(readerPalette.surface2, in: RoundedRectangle(cornerRadius: 10))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10).stroke(readerPalette.border, lineWidth: 1)
+            )
+            .foregroundStyle(readerPalette.text)
     }
 
     // MARK: - Helpers
 
-    private var chapterTitle: String {
+    private var chapterCounter: String {
         let idx = viewModel.currentChapterIndex
-        if viewModel.chapterURLs.count > 1 {
-            return "Chapter \(idx + 1) of \(viewModel.chapterURLs.count)"
-        }
-        return book.title
+        let total = viewModel.chapterURLs.count
+        return total > 0 ? "Chapter \(idx + 1) of \(total)" : ""
     }
+
+    private var chapterTitle: String { book.title }
 
     // MARK: - TOC sheet
 
@@ -270,7 +334,7 @@ struct ReaderView<VM: ReaderViewModeling>: View {
                             Text("Chapter \(index + 1)")
                             Spacer()
                             if index == viewModel.currentChapterIndex {
-                                Image(systemName: "checkmark").foregroundStyle(Color.accentColor)
+                                Image(systemName: "checkmark").foregroundStyle(appTheme.accent)
                             }
                         }
                     }

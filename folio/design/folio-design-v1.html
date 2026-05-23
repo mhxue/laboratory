@@ -1,0 +1,1233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Folio — Design v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* Page palette — modern & sharp, dark-first */
+    --page-bg: #0A0A0B;
+    --surface-0: #0E0E10;
+    --surface-1: #131316;
+    --surface-2: #1C1C20;
+    --surface-3: #25252B;
+    --border: #2A2A30;
+    --border-strong: #3A3A42;
+    --text-1: #F5F5F7;
+    --text-2: #98989F;
+    --text-3: #6E6E78;
+    --text-4: #4A4A52;
+    --accent: #FF9F5B;        /* amber — ties to existing EPUB dark-mode link colour */
+    --accent-soft: rgba(255, 159, 91, 0.14);
+    --accent-line: rgba(255, 159, 91, 0.32);
+    --success: #6EE7A7;
+    --warn: #F5C26B;
+
+    /* Type */
+    --display: 'Inter Tight', -apple-system, BlinkMacSystemFont, sans-serif;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --serif: 'Source Serif 4', 'New York', Charter, Georgia, serif;
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+    /* Motion */
+    --ease-out: cubic-bezier(0.2, 0, 0.2, 1);
+    --ease-spring: cubic-bezier(0.3, 1.2, 0.4, 1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--page-bg); color: var(--text-1); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+  body { padding: 56px 40px 96px; }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ============ Page chrome ============ */
+  .page {
+    max-width: 1480px;
+    margin: 0 auto;
+  }
+
+  .hero {
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 44px 48px;
+    background:
+      radial-gradient(1200px 400px at 90% -10%, rgba(255,159,91,0.10), transparent 60%),
+      radial-gradient(800px 300px at 10% 110%, rgba(110, 231, 167, 0.05), transparent 60%),
+      var(--surface-0);
+    margin-bottom: 56px;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 56px;
+    align-items: center;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 18px;
+  }
+  .eyebrow .dot {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent); margin-right: 10px; vertical-align: middle;
+    box-shadow: 0 0 12px var(--accent);
+  }
+
+  h1.title {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 64px;
+    line-height: 0.98;
+    letter-spacing: -0.035em;
+    margin-bottom: 20px;
+  }
+  h1.title em { font-style: normal; color: var(--accent); }
+
+  .lede {
+    font-size: 18px; line-height: 1.55; color: var(--text-2); max-width: 540px;
+  }
+  .lede strong { color: var(--text-1); font-weight: 500; }
+
+  .principles {
+    display: grid; gap: 14px;
+  }
+  .principle {
+    display: flex; gap: 16px; align-items: flex-start;
+    padding: 16px 18px; border: 1px solid var(--border); border-radius: 14px;
+    background: var(--surface-1);
+  }
+  .principle .num {
+    font-family: var(--mono); font-size: 11px; color: var(--text-3);
+    padding-top: 3px; min-width: 28px;
+  }
+  .principle .body strong {
+    font-family: var(--display); font-weight: 700; font-size: 15px;
+    color: var(--text-1); letter-spacing: -0.01em; display: block; margin-bottom: 4px;
+  }
+  .principle .body span {
+    font-size: 13.5px; line-height: 1.5; color: var(--text-2);
+  }
+
+  /* ============ Section headers ============ */
+  .section-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin: 64px 0 28px;
+    padding-bottom: 18px; border-bottom: 1px solid var(--border);
+  }
+  .section-head h2 {
+    font-family: var(--display); font-weight: 700;
+    font-size: 28px; letter-spacing: -0.02em;
+  }
+  .section-head .meta {
+    font-family: var(--mono); font-size: 11px; color: var(--text-3); letter-spacing: 0.1em; text-transform: uppercase;
+  }
+
+  /* ============ Tokens row ============ */
+  .tokens {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  }
+  .token-card {
+    border: 1px solid var(--border); border-radius: 16px;
+    padding: 22px; background: var(--surface-0);
+  }
+  .token-card h3 {
+    font-family: var(--display); font-size: 14px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3);
+    margin-bottom: 18px;
+  }
+  .swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+  .swatch {
+    aspect-ratio: 1; border-radius: 10px; border: 1px solid var(--border);
+    position: relative; display: flex; align-items: flex-end; justify-content: flex-start;
+  }
+  .swatch span {
+    position: absolute; bottom: 6px; left: 8px;
+    font-family: var(--mono); font-size: 9.5px; color: var(--text-2);
+  }
+  .type-stack { display: grid; gap: 14px; }
+  .type-row {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding-bottom: 10px; border-bottom: 1px dashed var(--border);
+  }
+  .type-row:last-child { border-bottom: none; }
+  .type-row .label { font-family: var(--mono); font-size: 10.5px; color: var(--text-3); }
+  .type-row .sample-display { font-family: var(--display); font-weight: 700; font-size: 22px; letter-spacing: -0.02em; }
+  .type-row .sample-sans { font-family: var(--sans); font-size: 15px; font-weight: 500; }
+  .type-row .sample-serif { font-family: var(--serif); font-size: 16px; font-style: italic; }
+
+  /* ============ Phone strip ============ */
+  .phone-strip {
+    display: flex; gap: 28px; padding: 16px 4px 56px;
+    overflow-x: auto; scroll-snap-type: x mandatory;
+    margin: 0 -40px; padding-left: 40px; padding-right: 40px;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+  }
+  .phone-strip::-webkit-scrollbar { height: 8px; }
+  .phone-strip::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .phone-wrap { scroll-snap-align: start; flex-shrink: 0; }
+  .phone-label {
+    margin-top: 18px; max-width: 320px;
+  }
+  .phone-label .n {
+    font-family: var(--mono); font-size: 10.5px; color: var(--text-3);
+    letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 6px;
+  }
+  .phone-label .t {
+    font-family: var(--display); font-size: 17px; font-weight: 600;
+    letter-spacing: -0.01em; margin-bottom: 6px;
+  }
+  .phone-label .d {
+    font-size: 13px; line-height: 1.5; color: var(--text-2);
+  }
+
+  /* ============ iPhone frame ============ */
+  .phone {
+    width: 320px; height: 692px;
+    background: #000;
+    border-radius: 44px;
+    border: 1px solid #2A2A2E;
+    padding: 8px;
+    position: relative;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset;
+  }
+  .phone::after {
+    /* dynamic island */
+    content: '';
+    position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+    width: 100px; height: 26px; background: #000; border-radius: 14px; z-index: 5;
+  }
+  .screen {
+    width: 100%; height: 100%;
+    border-radius: 36px; overflow: hidden;
+    position: relative;
+    display: flex; flex-direction: column;
+  }
+  .status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 24px 10px; font-family: var(--sans);
+    font-size: 13px; font-weight: 600;
+  }
+  .status-bar .right { display: flex; gap: 6px; align-items: center; }
+  .status-bar svg { display: block; }
+
+  /* ============ Screen-specific palettes ============ */
+  /* All screens share the same dark base; we can override per-screen via class. */
+
+  /* ---- Screen 1: Library ---- */
+  .s-library { background: var(--surface-0); color: var(--text-1); }
+  .lib-head { padding: 6px 20px 14px; display: flex; align-items: center; justify-content: space-between; }
+  .lib-head h1 {
+    font-family: var(--display); font-weight: 800; font-size: 32px;
+    letter-spacing: -0.03em;
+  }
+  .lib-head .head-actions { display: flex; gap: 10px; }
+  .icon-btn {
+    width: 34px; height: 34px; border-radius: 12px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    display: grid; place-items: center; color: var(--text-1);
+  }
+  .icon-btn.accent { background: var(--accent); color: #1A1006; border-color: transparent; }
+
+  .lib-tabs { padding: 0 20px; display: flex; gap: 6px; margin-bottom: 16px; overflow-x: auto; }
+  .lib-tab {
+    font-size: 12.5px; padding: 7px 12px; border-radius: 100px;
+    border: 1px solid var(--border); color: var(--text-2);
+    white-space: nowrap; font-weight: 500;
+  }
+  .lib-tab.on { background: var(--text-1); color: #0A0A0B; border-color: transparent; }
+
+  .lib-hero {
+    margin: 0 20px 22px;
+    border: 1px solid var(--border);
+    background: linear-gradient(135deg, #1B1410 0%, #131316 60%);
+    border-radius: 18px;
+    padding: 16px;
+    display: flex; gap: 14px; align-items: center;
+    position: relative; overflow: hidden;
+  }
+  .lib-hero::before {
+    content: ''; position: absolute; right: -40px; top: -40px;
+    width: 160px; height: 160px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,159,91,0.25), transparent 70%);
+  }
+  .hero-cover {
+    width: 64px; height: 92px; border-radius: 6px;
+    background: linear-gradient(160deg, #6B3A1A, #2A130A);
+    flex-shrink: 0; position: relative;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.06);
+  }
+  .hero-cover::after {
+    content: ''; position: absolute; left: 4px; top: 0; bottom: 0;
+    width: 1px; background: rgba(0,0,0,0.4);
+  }
+  .hero-cover-title {
+    position: absolute; top: 10px; left: 10px; right: 6px;
+    font-family: var(--serif); font-size: 9px; line-height: 1.15;
+    color: rgba(255,255,255,0.85); font-weight: 600;
+  }
+  .lib-hero .meta { flex: 1; position: relative; }
+  .lib-hero .meta .lbl {
+    font-family: var(--mono); font-size: 9.5px; color: var(--accent);
+    letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px;
+  }
+  .lib-hero .meta .ttl {
+    font-family: var(--display); font-size: 15px; font-weight: 700;
+    letter-spacing: -0.01em; margin-bottom: 2px;
+  }
+  .lib-hero .meta .auth { font-size: 11.5px; color: var(--text-2); margin-bottom: 10px; }
+  .lib-hero .progress {
+    height: 4px; background: var(--surface-3); border-radius: 100px; overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .lib-hero .progress > div { height: 100%; width: 53%; background: var(--accent); }
+  .lib-hero .meta .pgs { font-family: var(--mono); font-size: 10px; color: var(--text-3); letter-spacing: 0.06em; }
+
+  .lib-section-label {
+    padding: 0 20px; font-family: var(--mono); font-size: 10px; color: var(--text-3);
+    letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 12px;
+    display: flex; justify-content: space-between;
+  }
+  .lib-grid {
+    padding: 0 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px 14px;
+    flex: 1;
+  }
+  .book {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .book .cover {
+    aspect-ratio: 2/3; border-radius: 6px; position: relative;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.05);
+    overflow: hidden;
+  }
+  .book .cover::after {
+    content: ''; position: absolute; left: 3px; top: 0; bottom: 0;
+    width: 1px; background: rgba(0,0,0,0.35);
+  }
+  .book .cover-title {
+    position: absolute; left: 9px; right: 8px; top: 12px;
+    font-family: var(--serif); font-weight: 600; font-size: 9.5px; line-height: 1.15;
+    color: rgba(255,255,255,0.88);
+  }
+  .book .cover-author {
+    position: absolute; left: 9px; right: 8px; bottom: 10px;
+    font-family: var(--sans); font-size: 7.5px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: rgba(255,255,255,0.65);
+  }
+  .book .ttl { font-family: var(--display); font-weight: 600; font-size: 12.5px; letter-spacing: -0.01em; line-height: 1.25; }
+  .book .auth { font-size: 10.5px; color: var(--text-3); }
+  .book .chip {
+    position: absolute; top: 8px; right: 8px;
+    font-family: var(--mono); font-size: 8.5px; padding: 3px 6px;
+    border-radius: 6px; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+    color: rgba(255,255,255,0.9);
+  }
+  .book.in-progress .chip { background: var(--accent); color: #1A1006; }
+
+  /* Cover paint variations */
+  .cover.c1 { background: linear-gradient(165deg, #2B2050, #0D0820); }
+  .cover.c2 { background: linear-gradient(165deg, #1A4030, #06140F); }
+  .cover.c3 { background: linear-gradient(165deg, #7A1F1A, #2A0606); }
+  .cover.c4 { background: linear-gradient(165deg, #1F3656, #07101C); }
+  .cover.c5 { background: linear-gradient(165deg, #5B3818, #1A0F06); }
+  .cover.c6 { background: linear-gradient(165deg, #2F2F35, #0B0B0E); }
+
+  .tab-bar {
+    display: flex; justify-content: space-around; align-items: center;
+    padding: 12px 20px 20px;
+    border-top: 1px solid var(--border);
+    background: rgba(10,10,11,0.75); backdrop-filter: blur(12px);
+  }
+  .tab-bar .tb {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text-3);
+  }
+  .tab-bar .tb.on { color: var(--text-1); }
+
+  /* ---- Screen 2: Reader (immersive) ---- */
+  .s-reader { background: #0A0A0B; color: var(--text-1); }
+  .reader-body {
+    flex: 1; padding: 64px 32px 24px;
+    font-family: var(--serif); font-size: 16px; line-height: 1.7;
+    color: #E8E8ED; overflow: hidden;
+  }
+  .reader-body h2 {
+    font-family: var(--display); font-weight: 700; font-size: 14px;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-3);
+    margin-bottom: 6px;
+  }
+  .reader-body h1 {
+    font-family: var(--serif); font-weight: 600; font-size: 22px;
+    letter-spacing: -0.01em; line-height: 1.2; margin-bottom: 22px;
+    color: var(--text-1);
+  }
+  .reader-body p { margin-bottom: 14px; text-indent: 1.2em; }
+  .reader-body p:first-of-type { text-indent: 0; }
+  .reader-body p:first-of-type::first-letter {
+    font-family: var(--display); font-weight: 700; font-size: 44px;
+    float: left; line-height: 0.9; padding: 4px 8px 0 0; color: var(--accent);
+  }
+  .reader-foot {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 16px 32px 22px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--mono); font-size: 10px; color: var(--text-3);
+    letter-spacing: 0.08em;
+  }
+  .progress-hair { position: absolute; bottom: 0; left: 0; height: 1px; background: var(--accent); width: 53%; }
+
+  /* ---- Screen 3: Reader with chrome ---- */
+  .s-reader-chrome { background: #0A0A0B; color: var(--text-1); }
+  .reader-top-chrome {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 3;
+    padding: 50px 18px 14px;
+    background: linear-gradient(to bottom, rgba(10,10,11,0.95) 0%, rgba(10,10,11,0.85) 70%, transparent 100%);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .reader-top-chrome .back { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--border); }
+  .reader-top-chrome .ch-meta { flex: 1; }
+  .reader-top-chrome .ch-meta .num { font-family: var(--mono); font-size: 9.5px; color: var(--accent); letter-spacing: 0.14em; text-transform: uppercase; }
+  .reader-top-chrome .ch-meta .name { font-family: var(--display); font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em; }
+  .reader-bot-chrome {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 3;
+    padding: 14px 18px 22px;
+    background: linear-gradient(to top, rgba(10,10,11,0.95) 0%, rgba(10,10,11,0.85) 70%, transparent 100%);
+  }
+  .reader-bot-chrome .slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .reader-bot-chrome .slider-row .pg { font-family: var(--mono); font-size: 10px; color: var(--text-2); min-width: 40px; }
+  .reader-bot-chrome .slider {
+    flex: 1; height: 4px; background: var(--surface-3); border-radius: 100px; position: relative;
+  }
+  .reader-bot-chrome .slider .fill { height: 100%; background: var(--accent); width: 53%; border-radius: 100px; }
+  .reader-bot-chrome .slider .knob {
+    position: absolute; left: 53%; top: 50%; transform: translate(-50%, -50%);
+    width: 14px; height: 14px; border-radius: 50%; background: var(--text-1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+  .reader-bot-chrome .action-row { display: flex; justify-content: space-around; align-items: center; }
+  .reader-bot-chrome .action-row .a {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text-2);
+  }
+  .reader-bot-chrome .reading-time {
+    font-family: var(--mono); font-size: 10px; color: var(--text-3);
+    text-align: center; margin-bottom: 8px; letter-spacing: 0.08em;
+  }
+  .dim-body { filter: brightness(0.55); }
+
+  /* ---- Screen 4: Typography sheet ---- */
+  .s-type { background: #0A0A0B; color: var(--text-1); }
+  .type-sheet-backdrop {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+  }
+  .type-sheet {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: var(--surface-1);
+    border-top-left-radius: 24px; border-top-right-radius: 24px;
+    border-top: 1px solid var(--border-strong);
+    padding: 14px 22px 26px;
+  }
+  .grip {
+    width: 36px; height: 4px; background: var(--surface-3); border-radius: 100px;
+    margin: 0 auto 18px;
+  }
+  .type-sheet h3 {
+    font-family: var(--display); font-weight: 700; font-size: 18px;
+    letter-spacing: -0.02em; margin-bottom: 18px;
+  }
+  .seg {
+    display: grid; grid-template-columns: 1fr 1fr; padding: 4px;
+    background: var(--surface-2); border-radius: 12px; border: 1px solid var(--border);
+    margin-bottom: 18px;
+  }
+  .seg button {
+    border: none; background: transparent; padding: 10px;
+    color: var(--text-2); font-size: 13px; font-weight: 500;
+    border-radius: 8px; cursor: pointer; font-family: var(--sans);
+  }
+  .seg button.on { background: var(--text-1); color: #0A0A0B; }
+  .seg .serif { font-family: var(--serif); font-size: 15px; }
+  .seg .sans { font-family: var(--sans); font-weight: 600; }
+
+  .slider-block { margin-bottom: 16px; }
+  .slider-block .lbl-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .slider-block .lbl-row .l { font-family: var(--mono); font-size: 10.5px; color: var(--text-3); letter-spacing: 0.12em; text-transform: uppercase; }
+  .slider-block .lbl-row .v { font-family: var(--mono); font-size: 11px; color: var(--text-1); }
+  .ts-slider {
+    height: 6px; background: var(--surface-2); border-radius: 100px;
+    border: 1px solid var(--border); position: relative;
+  }
+  .ts-slider .f { height: 100%; background: var(--accent); border-radius: 100px; }
+  .ts-slider .k {
+    position: absolute; top: 50%; transform: translate(-50%, -50%);
+    width: 18px; height: 18px; border-radius: 50%; background: var(--text-1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+
+  .theme-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 6px; }
+  .theme-sw {
+    height: 78px; border-radius: 12px; position: relative;
+    border: 1px solid var(--border); overflow: hidden;
+    display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px;
+  }
+  .theme-sw .tname { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .theme-sw.light { background: #FAFAF8; color: #1A1A1A; }
+  .theme-sw.sepia { background: #F5EDD6; color: #3B2E1E; }
+  .theme-sw.dark { background: #161618; color: #E8E8ED; outline: 2px solid var(--accent); outline-offset: 2px; }
+  .theme-sw::before {
+    content: ''; position: absolute; left: 12px; right: 12px; top: 12px; height: 28px;
+    background: linear-gradient(to bottom, currentColor 0%, transparent 90%);
+    opacity: 0.55;
+    -webkit-mask: linear-gradient(to bottom, black 0, black 4px, transparent 4px, transparent 8px,
+                              black 8px, black 12px, transparent 12px, transparent 16px,
+                              black 16px, black 20px, transparent 20px, transparent 24px,
+                              black 24px, black 28px);
+            mask: linear-gradient(to bottom, black 0, black 4px, transparent 4px, transparent 8px,
+                              black 8px, black 12px, transparent 12px, transparent 16px,
+                              black 16px, black 20px, transparent 20px, transparent 24px,
+                              black 24px, black 28px);
+  }
+
+  /* ---- Screen 5: Import / Book detail (ownership) ---- */
+  .s-detail { background: var(--surface-0); }
+  .det-head {
+    padding: 4px 18px 14px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .det-head .ic { width: 32px; height: 32px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); display: grid; place-items: center; }
+
+  .det-card {
+    padding: 12px 22px 22px; display: flex; gap: 16px; align-items: flex-end;
+  }
+  .det-card .big-cover {
+    width: 120px; height: 178px; border-radius: 8px;
+    background: linear-gradient(165deg, #6B3A1A, #2A130A);
+    position: relative; flex-shrink: 0;
+    box-shadow: 0 18px 40px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.06);
+  }
+  .det-card .big-cover::after {
+    content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 1px;
+    background: rgba(0,0,0,0.45);
+  }
+  .det-card .big-cover .ct {
+    position: absolute; top: 16px; left: 16px; right: 12px;
+    font-family: var(--serif); font-weight: 600; font-size: 13px; line-height: 1.2;
+    color: rgba(255,255,255,0.92);
+  }
+  .det-card .big-cover .ca {
+    position: absolute; bottom: 16px; left: 16px; right: 12px;
+    font-family: var(--sans); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+  }
+  .det-card .meta-col { padding-bottom: 6px; flex: 1; min-width: 0; }
+  .det-card .meta-col .ttl {
+    font-family: var(--display); font-weight: 700; font-size: 19px; line-height: 1.15;
+    letter-spacing: -0.02em; margin-bottom: 4px;
+  }
+  .det-card .meta-col .auth { font-size: 12px; color: var(--text-2); margin-bottom: 10px; }
+  .det-card .meta-col .stat { font-family: var(--mono); font-size: 10px; color: var(--text-3); letter-spacing: 0.08em; }
+
+  .own-card {
+    margin: 6px 22px 18px; padding: 14px 16px;
+    border: 1px solid var(--accent-line); background: var(--accent-soft);
+    border-radius: 14px;
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .own-card .ic {
+    width: 30px; height: 30px; border-radius: 9px; background: var(--accent); color: #1A1006;
+    display: grid; place-items: center; flex-shrink: 0;
+  }
+  .own-card .body strong {
+    font-family: var(--display); font-size: 13px; font-weight: 700; letter-spacing: -0.01em;
+    display: block; margin-bottom: 2px; color: var(--text-1);
+  }
+  .own-card .body span { font-size: 11.5px; line-height: 1.45; color: var(--text-2); }
+
+  .cta-row {
+    margin: 0 22px 16px; display: grid; grid-template-columns: 1fr auto; gap: 10px;
+  }
+  .cta-row .primary {
+    background: var(--text-1); color: #0A0A0B; padding: 14px;
+    border-radius: 14px; font-family: var(--display); font-weight: 700; font-size: 14px;
+    text-align: center; letter-spacing: -0.005em;
+  }
+  .cta-row .secondary {
+    background: var(--surface-2); border: 1px solid var(--border);
+    width: 48px; display: grid; place-items: center; border-radius: 14px;
+  }
+
+  .chapter-list {
+    flex: 1; overflow: hidden; padding: 0 22px 16px;
+  }
+  .chapter-list .sec-lbl {
+    font-family: var(--mono); font-size: 10px; color: var(--text-3);
+    letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 10px;
+    display: flex; justify-content: space-between;
+  }
+  .ch-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 0; border-bottom: 1px solid var(--border);
+  }
+  .ch-row:last-child { border-bottom: none; }
+  .ch-row .n {
+    font-family: var(--mono); font-size: 10px; color: var(--text-3);
+    min-width: 22px;
+  }
+  .ch-row .t { flex: 1; font-size: 12.5px; color: var(--text-1); font-family: var(--serif); }
+  .ch-row .t.read { color: var(--text-3); }
+  .ch-row .dur { font-family: var(--mono); font-size: 9.5px; color: var(--text-3); letter-spacing: 0.06em; }
+  .ch-row.current .n { color: var(--accent); }
+  .ch-row.current .t { color: var(--accent); }
+
+  /* ---- Screen 6: Annotations & progress ---- */
+  .s-notes { background: var(--surface-0); }
+  .notes-head { padding: 6px 22px 16px; }
+  .notes-head .title-row {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;
+  }
+  .notes-head h1 {
+    font-family: var(--display); font-weight: 800; font-size: 28px; letter-spacing: -0.03em;
+  }
+  .notes-head .from {
+    font-family: var(--mono); font-size: 10px; color: var(--text-3); letter-spacing: 0.1em;
+    text-transform: uppercase; margin-bottom: 4px;
+  }
+  .notes-head .book-name {
+    font-family: var(--serif); font-size: 13px; color: var(--text-2);
+  }
+
+  .notes-tabs { padding: 0 22px; display: flex; gap: 4px; margin-bottom: 18px; }
+  .notes-tabs .t {
+    flex: 1; text-align: center; padding: 8px;
+    border-radius: 10px; font-size: 11.5px; font-weight: 500;
+    color: var(--text-2); background: var(--surface-2); border: 1px solid var(--border);
+  }
+  .notes-tabs .t.on { background: var(--text-1); color: #0A0A0B; border-color: transparent; }
+  .notes-tabs .t .count { font-family: var(--mono); font-size: 9.5px; opacity: 0.6; margin-left: 4px; }
+
+  .hl-list { padding: 0 22px; flex: 1; overflow: hidden; }
+  .hl {
+    margin-bottom: 14px; padding: 12px 14px;
+    border: 1px solid var(--border); border-radius: 12px;
+    background: var(--surface-1); position: relative;
+  }
+  .hl::before {
+    content: ''; position: absolute; left: 0; top: 12px; bottom: 12px;
+    width: 3px; border-radius: 0 4px 4px 0;
+  }
+  .hl.amber::before { background: var(--accent); }
+  .hl.green::before { background: var(--success); }
+  .hl.yellow::before { background: var(--warn); }
+  .hl .quote {
+    font-family: var(--serif); font-size: 13px; line-height: 1.5;
+    color: var(--text-1); margin-bottom: 8px;
+  }
+  .hl .quote.green-tint { background: linear-gradient(to bottom, transparent 60%, rgba(110,231,167,0.18) 60%); padding: 0 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+  .hl .quote.amber-tint { background: linear-gradient(to bottom, transparent 60%, rgba(255,159,91,0.22) 60%); padding: 0 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+  .hl .quote.yellow-tint { background: linear-gradient(to bottom, transparent 60%, rgba(245,194,107,0.22) 60%); padding: 0 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+  .hl .note {
+    font-size: 11.5px; color: var(--text-2); line-height: 1.45;
+    padding-top: 8px; border-top: 1px dashed var(--border); margin-top: 6px;
+  }
+  .hl .foot {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 8px;
+    font-family: var(--mono); font-size: 9.5px; color: var(--text-3);
+    letter-spacing: 0.08em;
+  }
+  .hl .foot .ch { color: var(--accent); }
+
+  /* ============ Notes section ============ */
+  .deep-notes {
+    margin-top: 64px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  }
+  .note-card {
+    border: 1px solid var(--border); border-radius: 16px;
+    padding: 22px; background: var(--surface-0);
+  }
+  .note-card h4 {
+    font-family: var(--display); font-weight: 700; font-size: 15px;
+    letter-spacing: -0.01em; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .note-card h4 .badge {
+    font-family: var(--mono); font-size: 9.5px; padding: 3px 7px; border-radius: 6px;
+    background: var(--surface-2); color: var(--text-3); border: 1px solid var(--border);
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .note-card p { font-size: 13px; line-height: 1.55; color: var(--text-2); }
+  .note-card ul { padding-left: 18px; }
+  .note-card ul li {
+    font-size: 12.5px; line-height: 1.55; color: var(--text-2);
+    margin-bottom: 6px;
+  }
+  .note-card ul li code {
+    font-family: var(--mono); font-size: 11px;
+    background: var(--surface-2); padding: 2px 6px; border-radius: 4px;
+    color: var(--text-1);
+  }
+
+  /* Tiny SVG icon defaults */
+  .ic-sm { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .ic-md { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Footer */
+  footer {
+    margin-top: 80px; padding-top: 28px; border-top: 1px solid var(--border);
+    font-family: var(--mono); font-size: 11px; color: var(--text-3);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  @media (max-width: 980px) {
+    .hero { grid-template-columns: 1fr; padding: 32px; }
+    h1.title { font-size: 44px; }
+    .tokens { grid-template-columns: 1fr; }
+    .deep-notes { grid-template-columns: 1fr; }
+    body { padding: 32px 20px 64px; }
+    .phone-strip { margin: 0 -20px; padding-left: 20px; padding-right: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div>
+      <div class="eyebrow"><span class="dot"></span>Folio · Design v1 · Modern &amp; Sharp</div>
+      <h1 class="title">Books you<br/><em>actually</em> own.</h1>
+      <p class="lede">
+        A reader for the EPUBs already on your device — <strong>no accounts, no cloud, no expiry</strong>.
+        Folio stays out of the way. The chrome disappears, the type breathes, and every interaction is built around one feeling:
+        <strong>you opened a book and it just started</strong>.
+      </p>
+    </div>
+    <div class="principles">
+      <div class="principle">
+        <div class="num">01</div>
+        <div class="body">
+          <strong>Ownership over access</strong>
+          <span>If you imported it, it stays. Local files, local progress, local highlights. No login wall, no DRM, no "available in your region."</span>
+        </div>
+      </div>
+      <div class="principle">
+        <div class="num">02</div>
+        <div class="body">
+          <strong>Type-first, chrome-last</strong>
+          <span>The reader is a page, not a UI. Controls fade out within 1.5s of opening a book and only return on a center tap.</span>
+        </div>
+      </div>
+      <div class="principle">
+        <div class="num">03</div>
+        <div class="body">
+          <strong>Fluid by default</strong>
+          <span>60fps page turns, predictive chapter pre-render, instant theme switching. Performance is a design property, not an optimisation.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TOKENS ============ -->
+  <div class="section-head">
+    <h2>Visual system</h2>
+    <div class="meta">Dark-first · Inter Tight + Source Serif 4</div>
+  </div>
+  <div class="tokens">
+    <div class="token-card">
+      <h3>Surfaces</h3>
+      <div class="swatches">
+        <div class="swatch" style="background:#0A0A0B"><span>0A0A0B</span></div>
+        <div class="swatch" style="background:#131316"><span>131316</span></div>
+        <div class="swatch" style="background:#1C1C20"><span>1C1C20</span></div>
+        <div class="swatch" style="background:#25252B"><span>25252B</span></div>
+        <div class="swatch" style="background:#2A2A30"><span>2A2A30</span></div>
+        <div class="swatch" style="background:#3A3A42"><span>3A3A42</span></div>
+      </div>
+    </div>
+    <div class="token-card">
+      <h3>Content &amp; accent</h3>
+      <div class="swatches">
+        <div class="swatch" style="background:#F5F5F7;border-color:#dadada"><span style="color:#444">F5F5F7</span></div>
+        <div class="swatch" style="background:#98989F"><span>98989F</span></div>
+        <div class="swatch" style="background:#6E6E78"><span>6E6E78</span></div>
+        <div class="swatch" style="background:#FF9F5B"><span style="color:#1a0e02">FF9F5B</span></div>
+        <div class="swatch" style="background:#6EE7A7"><span style="color:#072014">6EE7A7</span></div>
+        <div class="swatch" style="background:#F5C26B"><span style="color:#1c1304">F5C26B</span></div>
+      </div>
+    </div>
+    <div class="token-card">
+      <h3>Typography</h3>
+      <div class="type-stack">
+        <div class="type-row">
+          <div class="sample-display">Aa Folio</div>
+          <div class="label">DISPLAY · INTER TIGHT 700</div>
+        </div>
+        <div class="type-row">
+          <div class="sample-sans">Read · Library · Settings</div>
+          <div class="label">UI · INTER 500</div>
+        </div>
+        <div class="type-row">
+          <div class="sample-serif">The art of reading.</div>
+          <div class="label">CONTENT · SOURCE SERIF 4</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PHONES ============ -->
+  <div class="section-head">
+    <h2>Screens</h2>
+    <div class="meta">Scroll horizontally · iPhone 15 (390×844 @ 0.82)</div>
+  </div>
+
+  <div class="phone-strip">
+
+    <!-- ============ 1. LIBRARY ============ -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="screen s-library">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="right">
+              <svg class="ic-sm" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0114 0M8.5 16.55a6 6 0 017 0M12 20h.01"/></svg>
+              <svg class="ic-sm" viewBox="0 0 24 24" style="stroke-width:1.4"><rect x="1" y="6" width="18" height="12" rx="2"/><path d="M23 11v2"/></svg>
+            </div>
+          </div>
+
+          <div class="lib-head">
+            <h1>Library</h1>
+            <div class="head-actions">
+              <div class="icon-btn">
+                <svg class="ic-md" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              </div>
+              <div class="icon-btn accent">
+                <svg class="ic-md" viewBox="0 0 24 24" style="stroke:#1A1006;stroke-width:2"><path d="M12 5v14M5 12h14"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="lib-tabs">
+            <div class="lib-tab on">All · 42</div>
+            <div class="lib-tab">Reading · 3</div>
+            <div class="lib-tab">Finished</div>
+            <div class="lib-tab">Unread</div>
+          </div>
+
+          <div class="lib-hero">
+            <div class="hero-cover">
+              <div class="hero-cover-title">The Library<br/>at Night</div>
+            </div>
+            <div class="meta">
+              <div class="lbl">Continue reading</div>
+              <div class="ttl">The Library at Night</div>
+              <div class="auth">Alberto Manguel</div>
+              <div class="progress"><div></div></div>
+              <div class="pgs">53% · 4H 12M LEFT</div>
+            </div>
+          </div>
+
+          <div class="lib-section-label">
+            <span>Recently added</span>
+            <span>Newest ↓</span>
+          </div>
+
+          <div class="lib-grid">
+            <div class="book in-progress">
+              <div class="cover c1">
+                <div class="cover-title">The Anthropocene<br/>Reviewed</div>
+                <div class="cover-author">John Green</div>
+                <div class="chip">23%</div>
+              </div>
+              <div class="ttl">The Anthropocene Reviewed</div>
+              <div class="auth">John Green</div>
+            </div>
+            <div class="book">
+              <div class="cover c2">
+                <div class="cover-title">Pilgrim<br/>at Tinker<br/>Creek</div>
+                <div class="cover-author">Annie Dillard</div>
+              </div>
+              <div class="ttl">Pilgrim at Tinker Creek</div>
+              <div class="auth">Annie Dillard</div>
+            </div>
+            <div class="book">
+              <div class="cover c3">
+                <div class="cover-title">A Pattern<br/>Language</div>
+                <div class="cover-author">Alexander · Ishikawa</div>
+              </div>
+              <div class="ttl">A Pattern Language</div>
+              <div class="auth">Christopher Alexander</div>
+            </div>
+            <div class="book">
+              <div class="cover c4">
+                <div class="cover-title">The Glass<br/>Bead Game</div>
+                <div class="cover-author">Hermann Hesse</div>
+              </div>
+              <div class="ttl">The Glass Bead Game</div>
+              <div class="auth">Hermann Hesse</div>
+            </div>
+          </div>
+
+          <div class="tab-bar">
+            <div class="tb on">
+              <svg class="ic-md" viewBox="0 0 24 24"><path d="M4 4h6v16H4zM14 4h6v16h-6z"/></svg>
+              Library
+            </div>
+            <div class="tb">
+              <svg class="ic-md" viewBox="0 0 24 24"><path d="M4 6h12M4 12h16M4 18h10"/></svg>
+              Notes
+            </div>
+            <div class="tb">
+              <svg class="ic-md" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              Stats
+            </div>
+            <div class="tb">
+              <svg class="ic-md" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+              Settings
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">
+        <div class="n">01 · LIBRARY</div>
+        <div class="t">Continue where you left off</div>
+        <div class="d">Hero card surfaces the in-progress book with time-to-finish. Grid is dense but breathable — 2 columns on iPhone, scaling to 3 on iPad. Sort defaults to <em>most recently added</em> (matches existing `Book.addedDate desc`).</div>
+      </div>
+    </div>
+
+    <!-- ============ 2. READER IMMERSIVE ============ -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="screen s-reader">
+          <div class="status-bar" style="color:var(--text-3)">
+            <span>9:42</span>
+            <div class="right">
+              <svg class="ic-sm" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0114 0M8.5 16.55a6 6 0 017 0M12 20h.01"/></svg>
+            </div>
+          </div>
+          <div class="reader-body">
+            <h2>Chapter 3</h2>
+            <h1>The Library at Night</h1>
+            <p>Every library is a self-portrait, a reflection of the person who built it, of the books they kept and those they let go. The shelves are a graph of attention — what was read, what was abandoned, what was loaned to a friend and never returned, what stood in for a feeling we couldn't yet name.</p>
+            <p>To open a book is to enter a room. To finish it is to leave the room, but the room remains: behind us, around us, beside the next room and the next. The library is not a place we visit. It is a place that visits us.</p>
+            <p>When the city outside falls quiet, the library at night becomes a second city — narrower, taller, made entirely of</p>
+          </div>
+          <div class="reader-foot">
+            <span>53%</span>
+            <span>12 / 47</span>
+          </div>
+          <div class="progress-hair"></div>
+        </div>
+      </div>
+      <div class="phone-label">
+        <div class="n">02 · READER (IMMERSIVE)</div>
+        <div class="t">Just the page</div>
+        <div class="d">Chrome auto-hides after 1.5s. Only the page count and a 1px progress hairline remain. Drop cap in the accent amber acknowledges the chapter without a banner. Tap center to bring chrome back.</div>
+      </div>
+    </div>
+
+    <!-- ============ 3. READER WITH CHROME ============ -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="screen s-reader-chrome">
+          <div class="status-bar"><span>9:42</span><div class="right"><svg class="ic-sm" viewBox="0 0 24 24"><rect x="1" y="6" width="18" height="12" rx="2"/><path d="M23 11v2"/></svg></div></div>
+
+          <div class="reader-top-chrome">
+            <div class="back">
+              <svg class="ic-md" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+            </div>
+            <div class="ch-meta">
+              <div class="num">Chapter 3 of 12</div>
+              <div class="name">The Library at Night</div>
+            </div>
+            <div class="back">
+              <svg class="ic-md" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+            </div>
+          </div>
+
+          <div class="reader-body dim-body">
+            <h2 style="margin-top:36px">Chapter 3</h2>
+            <h1>The Library at Night</h1>
+            <p>Every library is a self-portrait, a reflection of the person who built it, of the books they kept and those they let go. The shelves are a graph of attention — what was read, what was abandoned, what was loaned to a friend.</p>
+            <p>To open a book is to enter a room. To finish it is to leave the room, but the room remains: behind us, around us, beside the next room and the next.</p>
+          </div>
+
+          <div class="reader-bot-chrome">
+            <div class="reading-time">4H 12M LEFT IN BOOK · 18M IN CHAPTER</div>
+            <div class="slider-row">
+              <span class="pg">12</span>
+              <div class="slider"><div class="fill"></div><div class="knob"></div></div>
+              <span class="pg" style="text-align:right">47</span>
+            </div>
+            <div class="action-row">
+              <div class="a">
+                <svg class="ic-md" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+                TOC
+              </div>
+              <div class="a">
+                <svg class="ic-md" viewBox="0 0 24 24"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+                Type
+              </div>
+              <div class="a">
+                <svg class="ic-md" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+                Mark
+              </div>
+              <div class="a">
+                <svg class="ic-md" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                Find
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">
+        <div class="n">03 · READER (CHROME)</div>
+        <div class="t">All controls, one tap away</div>
+        <div class="d">Single center-tap reveals top &amp; bottom overlays with a body dim. Bottom slider doubles as a scrubber. Reading-time estimate is computed locally from rolling avg pace — no server needed.</div>
+      </div>
+    </div>
+
+    <!-- ============ 4. TYPOGRAPHY SHEET ============ -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="screen s-type">
+          <div class="status-bar"><span>9:42</span><div class="right"><svg class="ic-sm" viewBox="0 0 24 24"><rect x="1" y="6" width="18" height="12" rx="2"/></svg></div></div>
+          <div class="reader-body dim-body" style="padding-top:40px">
+            <h2>Chapter 3</h2>
+            <h1>The Library at Night</h1>
+            <p>Every library is a self-portrait, a reflection of the person who built it, of the books they kept and those they let go.</p>
+            <p>To open a book is to enter a room.</p>
+          </div>
+          <div class="type-sheet-backdrop"></div>
+          <div class="type-sheet">
+            <div class="grip"></div>
+            <h3>Reading style</h3>
+
+            <div class="seg">
+              <button class="on serif">Aa Serif</button>
+              <button class="sans">Aa Sans</button>
+            </div>
+
+            <div class="slider-block">
+              <div class="lbl-row"><div class="l">Font size</div><div class="v">18 pt</div></div>
+              <div class="ts-slider"><div class="f" style="width:50%"></div><div class="k" style="left:50%"></div></div>
+            </div>
+
+            <div class="slider-block">
+              <div class="lbl-row"><div class="l">Line height</div><div class="v">1.6×</div></div>
+              <div class="ts-slider"><div class="f" style="width:40%"></div><div class="k" style="left:40%"></div></div>
+            </div>
+
+            <div class="slider-block">
+              <div class="lbl-row"><div class="l">Margin</div><div class="v">Comfortable</div></div>
+              <div class="ts-slider"><div class="f" style="width:55%"></div><div class="k" style="left:55%"></div></div>
+            </div>
+
+            <div class="lbl-row" style="margin-bottom:8px"><div class="l" style="font-family:var(--mono); font-size:10.5px; color:var(--text-3); letter-spacing:.12em; text-transform:uppercase">Theme</div></div>
+            <div class="theme-row">
+              <div class="theme-sw light"><span class="tname">Light</span></div>
+              <div class="theme-sw sepia"><span class="tname">Sepia</span></div>
+              <div class="theme-sw dark"><span class="tname">Dark</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">
+        <div class="n">04 · TYPOGRAPHY</div>
+        <div class="t">Reading style, not "settings"</div>
+        <div class="d">Bottom sheet with grip — drag down or tap outside to dismiss. All sliders update the underlying text live (matches EPUBKit's <code style="font-family:var(--mono);font-size:11px;background:var(--surface-2);padding:1px 4px;border-radius:3px">EPUBStylesheet</code>). Selected theme has a 2px amber outline.</div>
+      </div>
+    </div>
+
+    <!-- ============ 5. IMPORT / OWNERSHIP ============ -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="screen s-detail">
+          <div class="status-bar"><span>9:43</span><div class="right"><svg class="ic-sm" viewBox="0 0 24 24"><rect x="1" y="6" width="18" height="12" rx="2"/></svg></div></div>
+
+          <div class="det-head">
+            <div class="ic">
+              <svg class="ic-md" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+            </div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text-3);letter-spacing:0.14em;text-transform:uppercase">Book details</div>
+            <div class="ic">
+              <svg class="ic-md" viewBox="0 0 24 24"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>
+            </div>
+          </div>
+
+          <div class="det-card">
+            <div class="big-cover">
+              <div class="ct">The Library<br/>at Night</div>
+              <div class="ca">Alberto Manguel</div>
+            </div>
+            <div class="meta-col">
+              <div class="ttl">The Library at Night</div>
+              <div class="auth">Alberto Manguel</div>
+              <div class="stat">12 CH · 47 PG · 2.4 MB</div>
+            </div>
+          </div>
+
+          <div class="own-card">
+            <div class="ic">
+              <svg class="ic-md" viewBox="0 0 24 24" style="stroke:#1A1006;stroke-width:2"><path d="M12 22s-8-4.5-8-11.5A5.5 5.5 0 0112 5a5.5 5.5 0 018 5.5C20 17.5 12 22 12 22z"/></svg>
+            </div>
+            <div class="body">
+              <strong>Yours forever</strong>
+              <span>Stored on this device only. No account, no sync, no licence check. AirDrop or Files-app export available any time.</span>
+            </div>
+          </div>
+
+          <div class="cta-row">
+            <div class="primary">Continue reading · 53%</div>
+            <div class="secondary">
+              <svg class="ic-md" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+            </div>
+          </div>
+
+          <div class="chapter-list">
+            <div class="sec-lbl">
+              <span>Chapters</span>
+              <span>12 total</span>
+            </div>
+            <div class="ch-row">
+              <div class="n">01</div><div class="t read">A Reader's Prologue</div><div class="dur">8 MIN</div>
+            </div>
+            <div class="ch-row">
+              <div class="n">02</div><div class="t read">The Library as Myth</div><div class="dur">14 MIN</div>
+            </div>
+            <div class="ch-row current">
+              <div class="n">03</div><div class="t">The Library at Night</div><div class="dur">18 MIN</div>
+            </div>
+            <div class="ch-row">
+              <div class="n">04</div><div class="t">The Library as Order</div><div class="dur">22 MIN</div>
+            </div>
+            <div class="ch-row">
+              <div class="n">05</div><div class="t">The Library as Space</div><div class="dur">19 MIN</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">
+        <div class="n">05 · OWNERSHIP</div>
+        <div class="t">"Yours forever" — said out loud</div>
+        <div class="d">The amber "ownership card" is the only place the product makes a claim about itself, and it's earned: storage location, file size, and an export action are visible. Trust comes from being literal.</div>
+      </div>
+    </div>
+
+    <!-- ============ 6. ANNOTATIONS ============ -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="screen s-notes">
+          <div class="status-bar"><span>9:43</span><div class="right"><svg class="ic-sm" viewBox="0 0 24 24"><rect x="1" y="6" width="18" height="12" rx="2"/></svg></div></div>
+
+          <div class="notes-head">
+            <div class="title-row">
+              <h1>Notes</h1>
+              <div class="icon-btn">
+                <svg class="ic-md" viewBox="0 0 24 24"><path d="M21 12l-9 9-3-3"/><path d="M14 12l-2 2-2-2M14 16l-2 2-2-2"/></svg>
+              </div>
+            </div>
+            <div class="from">FROM</div>
+            <div class="book-name">The Library at Night · Alberto Manguel</div>
+          </div>
+
+          <div class="notes-tabs">
+            <div class="t on">Highlights<span class="count">14</span></div>
+            <div class="t">Notes<span class="count">3</span></div>
+            <div class="t">Bookmarks<span class="count">5</span></div>
+          </div>
+
+          <div class="hl-list">
+            <div class="hl amber">
+              <div class="quote"><span class="amber-tint">The library is not a place we visit. It is a place that visits us.</span></div>
+              <div class="foot">
+                <span class="ch">CH 3 · P. 47</span>
+                <span>2 DAYS AGO</span>
+              </div>
+            </div>
+            <div class="hl green">
+              <div class="quote"><span class="green-tint">Every library is a self-portrait, a reflection of the person who built it.</span></div>
+              <div class="note">— compare to Borges, "Library of Babel"</div>
+              <div class="foot">
+                <span class="ch">CH 3 · P. 44</span>
+                <span>2 DAYS AGO</span>
+              </div>
+            </div>
+            <div class="hl yellow">
+              <div class="quote"><span class="yellow-tint">To open a book is to enter a room. To finish it is to leave the room, but the room remains.</span></div>
+              <div class="foot">
+                <span class="ch">CH 3 · P. 45</span>
+                <span>3 DAYS AGO</span>
+              </div>
+            </div>
+            <div class="hl amber">
+              <div class="quote"><span class="amber-tint">What was read, what was abandoned, what was loaned to a friend and never returned.</span></div>
+              <div class="foot">
+                <span class="ch">CH 2 · P. 31</span>
+                <span>4 DAYS AGO</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">
+        <div class="n">06 · ANNOTATIONS</div>
+        <div class="t">Highlights, on their own terms</div>
+        <div class="d">Three colours by intent — amber = important, green = connection, yellow = "look up later". Tap a card to jump back to the exact paragraph (we already store `chapterIndex` + `scrollFraction` per <code style="font-family:var(--mono);font-size:11px;background:var(--surface-2);padding:1px 4px;border-radius:3px">Bookmark</code>).</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ DEEP NOTES ============ -->
+  <div class="section-head">
+    <h2>What this means for the build</h2>
+    <div class="meta">Maps to existing Folio code</div>
+  </div>
+  <div class="deep-notes">
+    <div class="note-card">
+      <h4>Reading experience <span class="badge">ReaderView</span></h4>
+      <p>The "1.5s auto-hide chrome" is the headline interaction. It's just a <code>Task.sleep</code> + an <code>@Observable</code> bool. Pre-render the next chapter's HTML into a second <code>WKWebView</code> as soon as the user passes 80% of the current chapter — page-turn cost drops from ~120ms to under one frame.</p>
+    </div>
+    <div class="note-card">
+      <h4>Library &amp; organisation <span class="badge">LibraryView</span></h4>
+      <p>"Continue reading" hero card pulls the most-recent <code>Book</code> with a non-nil <code>progress</code>. Sort default stays <code>addedDate</code>. New: a "Reading" filter pill (<code>progress != nil &amp;&amp; progressFraction &lt; 1</code>) and "Finished" (<code>progressFraction == 1</code>) — both derived, no schema change.</p>
+    </div>
+    <div class="note-card">
+      <h4>Ownership story <span class="badge">BookStoring</span></h4>
+      <p>The amber "Yours forever" card needs no new code — it surfaces what's already true: <code>BookStore</code> copies files into the app's local container and never phones home. Make this visible: show file path, size, and an "Export EPUB" action that uses <code>UIDocumentPickerViewController</code>.</p>
+    </div>
+    <div class="note-card">
+      <h4>Annotations <span class="badge">Bookmark</span></h4>
+      <p>Today <code>Bookmark</code> has <code>note: String?</code> but no colour/tag. Smallest extension: add <code>kind: BookmarkKind</code> (<code>.important</code> / <code>.connection</code> / <code>.lookup</code>) with a default that backfills existing rows. The Notes screen groups by book and is reachable from the tab bar — not buried inside the reader.</p>
+    </div>
+    <div class="note-card">
+      <h4>Typography sheet <span class="badge">SettingsViewModel</span></h4>
+      <p>Reuse the existing <code>EPUBStylesheet</code> bindings — font, fontSize (12–26), lineSpacing (1.2–2.2), theme. New control: margin width (a 3-stop segmented: tight / comfortable / wide) that maps to a CSS variable injected on chapter load. Persist via the existing <code>UserDefaults</code> pipe.</p>
+    </div>
+    <div class="note-card">
+      <h4>Motion &amp; perf <span class="badge">cross-cutting</span></h4>
+      <p>Three motion primitives: 180ms <code>ease-out</code> for chrome reveal, 320ms <code>cubic-bezier(.3,0,.2,1)</code> for page turns, 380ms spring for sheets. Theme switch is instant (no fade) — switching mid-page should feel like turning on a lamp, not loading a new screen.</p>
+    </div>
+  </div>
+
+  <footer>
+    <span>Folio · Design v1 · {date}</span>
+    <span>luffy.xue@apollox.com</span>
+  </footer>
+</div>
+
+<script>
+  // Stamp today's date in the footer
+  document.querySelector('footer').innerHTML = document.querySelector('footer').innerHTML.replace('{date}', new Date().toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }));
+</script>
+</body>
+</html>

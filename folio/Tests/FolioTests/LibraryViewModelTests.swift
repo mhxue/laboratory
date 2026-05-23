@@ -120,4 +120,100 @@ final class LibraryViewModelTests: XCTestCase {
 
         XCTAssertNotNil(vm.importError)
     }
+
+    // MARK: - filters
+
+    /// Inserts three books (unread / reading / finished) into the in-memory
+    /// SwiftData context, then reloads the VM so `fetchBooks` picks them up.
+    @discardableResult
+    private func seedThreeBooks() -> (unread: Book, reading: Book, finished: Book) {
+        let unread = Book(title: "Unread", author: "A", filePath: "Books/u.epub", chapterCount: 4)
+        let reading = Book(title: "Reading", author: "A", filePath: "Books/r.epub", chapterCount: 4)
+        reading.progress = ReadingProgress(chapterIndex: 1, scrollFraction: 0.5)
+        let finished = Book(title: "Finished", author: "A", filePath: "Books/f.epub", chapterCount: 2)
+        finished.progress = ReadingProgress(chapterIndex: 2, scrollFraction: 0)
+        context.insert(unread)
+        context.insert(reading)
+        context.insert(finished)
+        return (unread, reading, finished)
+    }
+
+    func test_filter_all_returnsEverything() {
+        let seeded = seedThreeBooks()
+        let vm = LibraryViewModel(store: MockBookStore(), context: context)
+        vm.filter = .all
+        XCTAssertEqual(Set(vm.filteredBooks.map(\.title)),
+                       Set([seeded.unread.title, seeded.reading.title, seeded.finished.title]))
+    }
+
+    func test_filter_reading_returnsOnlyInProgress() {
+        let seeded = seedThreeBooks()
+        let vm = LibraryViewModel(store: MockBookStore(), context: context)
+        vm.filter = .reading
+        XCTAssertEqual(vm.filteredBooks.map(\.title), [seeded.reading.title])
+    }
+
+    func test_filter_finished_returnsOnlyFinished() {
+        let seeded = seedThreeBooks()
+        let vm = LibraryViewModel(store: MockBookStore(), context: context)
+        vm.filter = .finished
+        XCTAssertEqual(vm.filteredBooks.map(\.title), [seeded.finished.title])
+    }
+
+    func test_filter_unread_returnsOnlyUnread() {
+        let seeded = seedThreeBooks()
+        let vm = LibraryViewModel(store: MockBookStore(), context: context)
+        vm.filter = .unread
+        XCTAssertEqual(vm.filteredBooks.map(\.title), [seeded.unread.title])
+    }
+
+    func test_count_perFilter() {
+        seedThreeBooks()
+        let vm = LibraryViewModel(store: MockBookStore(), context: context)
+        XCTAssertEqual(vm.count(for: .all), 3)
+        XCTAssertEqual(vm.count(for: .reading), 1)
+        XCTAssertEqual(vm.count(for: .finished), 1)
+        XCTAssertEqual(vm.count(for: .unread), 1)
+    }
+
+    // MARK: - continueReading hero
+
+    func test_continueReading_isNil_whenLibraryEmpty() {
+        let vm = LibraryViewModel(store: MockBookStore(), context: context)
+        XCTAssertNil(vm.continueReading)
+    }
+
+    func test_continueReading_isNil_whenNoInProgressBook() {
+        // Only unread + finished.
+        let unread = Book(title: "U", author: "A", filePath: "Books/u.epub", chapterCount: 2)
+        let finished = Book(title: "F", author: "A", filePath: "Books/f.epub", chapterCount: 2)
+        finished.progress = ReadingProgress(chapterIndex: 2, scrollFraction: 0)
+        context.insert(unread)
+        context.insert(finished)
+        let vm = LibraryViewModel(store: MockBookStore(), context: context)
+        XCTAssertNil(vm.continueReading)
+    }
+
+    func test_continueReading_prefersMostRecentlyRead() {
+        let older = Book(title: "Older", author: "A", filePath: "Books/o.epub", chapterCount: 4)
+        let p1 = ReadingProgress(chapterIndex: 1, scrollFraction: 0.3)
+        p1.lastRead = Date(timeIntervalSinceNow: -3600)
+        older.progress = p1
+
+        let newer = Book(title: "Newer", author: "A", filePath: "Books/n.epub", chapterCount: 4)
+        let p2 = ReadingProgress(chapterIndex: 2, scrollFraction: 0.2)
+        p2.lastRead = Date()
+        newer.progress = p2
+
+        context.insert(older)
+        context.insert(newer)
+
+        let vm = LibraryViewModel(store: MockBookStore(), context: context)
+        XCTAssertEqual(vm.continueReading?.title, "Newer")
+    }
+
+    func test_filter_defaultsToAll() {
+        let vm = LibraryViewModel(store: MockBookStore(), context: context)
+        XCTAssertEqual(vm.filter, .all)
+    }
 }

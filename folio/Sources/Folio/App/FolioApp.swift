@@ -17,8 +17,7 @@ struct FolioApp: App {
     var body: some Scene {
         WindowGroup {
             let store = BookStore()
-            let libraryVM = LibraryViewModel(store: store, context: container.mainContext)
-            LibraryView(viewModel: libraryVM, store: store)
+            RootTabView(store: store, container: container)
                 .environment(settingsVM)
                 .onAppear {
                     seedLibraryIfNeeded(context: container.mainContext)
